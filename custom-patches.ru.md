@@ -37,6 +37,7 @@
 | `reload-media` | Папка "Control" в корне: обновить медиатеку, перезапуск сервера, гибернация и выключение ПК | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (новые), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
+| `virtual-folders` | Виртуальные папки (одно имя, несколько папок) внутри "Folders" и в сканировании медиатеки | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Изменение настройки перестраивает и общие папки, а не только корень | `MediaStore`, `Renderer` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
@@ -459,6 +460,34 @@ settings"). Все настройки своих патчей с интерфе�
 ### Настройки в conf (`UMS.conf`)
 
 Своих ключей нет.
+
+---
+
+## virtual-folders
+
+### Суть работы
+
+Штатные виртуальные папки Shared Content (тип "Virtual folders" / "Виртуальные папки": свое имя и список папок,
+содержимое которых показывается вместе) встроены в свои патчи:
+
+- При `show_folders_container = true` виртуальная папка создается внутри "Folders" (`MediaStore.setVirtualFolderContent`),
+  как обычные общие папки, а не в корне. Поле "Путь" виртуальной папки отсчитывается от "Folders".
+- "Scan media library" / "Обновить медиатеку" (`MediaScanner.setSharedContent`) проходит и активные виртуальные
+  папки (штатно - только обычные общие папки); флаг "добавлять в медиатеку" виртуальной папки соблюдается.
+  Кнопка "Scan media library" в Shared Content видна и когда есть только виртуальные папки
+  (`ScanSharedFoldersButton`, штатно - только при обычной папке).
+- Страница "Управление папками" - см. `folders-root` (код страницы целиком в тегах `folders-root`).
+
+Одну и ту же папку не стоит держать и отдельной общей папкой, и внутри виртуальной: у устройств она будет дважды.
+
+### Настройки в UI
+
+Штатные: Shared Content -> Добавить -> Тип "Виртуальные папки", Имя, "Общие папки" (несколько). Флажок
+"Объединять виртуальные папки" - на странице "Управление папками".
+
+### Настройки в conf (`UMS.conf`)
+
+Своих ключей нет (виртуальные папки - в `SHARED.conf`).
 
 ---
 

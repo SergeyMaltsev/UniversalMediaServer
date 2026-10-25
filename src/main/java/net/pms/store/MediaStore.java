@@ -416,7 +416,13 @@ public class MediaStore extends StoreContainer {
 
 	private void setVirtualFolderContent(VirtualFolderContent virtualFolderContent) {
 		//TODO : find a way to use backupChildren avoiding reconstruction
-		StoreContainer parent = getSharedContentParent(virtualFolderContent.getParent());
+		// <custom-remove:virtual-folders>
+		// StoreContainer parent = getSharedContentParent(virtualFolderContent.getParent());
+		// </custom-remove:virtual-folders>
+		// <custom:virtual-folders> Virtual folders go into "Folders" (with their "Path" inside it) when it is enabled
+		StoreContainer target = renderer.getUmsConfiguration().isShowFoldersContainer() ? foldersContainer : this;
+		StoreContainer parent = target.getSharedContentParent(virtualFolderContent.getParent());
+		// </custom:virtual-folders>
 		parent.addChild(new VirtualFolder(renderer, virtualFolderContent));
 	}
 
