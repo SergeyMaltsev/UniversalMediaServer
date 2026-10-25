@@ -40,6 +40,7 @@
 | `virtual-folders` | Виртуальные папки (одно имя, несколько папок) внутри "Folders" и в сканировании медиатеки | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Изменение настройки перестраивает и общие папки, а не только корень | `MediaStore`, `Renderer` |
 | `deep-browse` | Прямой запрос папки по id (закладка клиента) работает сразу после перезапуска, без захода в корень | `MediaStore` |
+| `server-uuid` | Кнопка "New server UUID" в Custom Settings: новый UUID сервера и перезапуск (для копии UMS на другом ПК) | `MediaServer`, `ActionsApiServlet`, `CustomSettings.tsx` (раздел в теге `custom-settings`), `messages*.properties` |
 | `ruid-no-mmap` | RUID файла считается обычным чтением, а не отображением в память: свежие файлы не остаются занятыми UMS до сборки мусора | `ResourceIdentifier` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
@@ -516,6 +517,31 @@ settings"). Все настройки своих патчей с интерфе�
 ### Настройки в conf (`UMS.conf`)
 
 Нет.
+
+---
+
+## server-uuid
+
+### Суть работы
+
+Устройства различают серверы по UPnP UUID (`uuid` в `UMS.conf`). При копировании UMS на другой компьютер вместе с
+`portable\UMS.conf` копируется и `uuid`: два сервера с одним UUID устройства (Movian) считают одним - показывают
+содержимое одного под именем другого, закладки открываются не на том сервере.
+
+Патч: Server Settings -> Custom Settings -> раздел "Server UUID" ("UUID сервера"): текущий UUID и красная кнопка
+"New server UUID" ("Новый UUID сервера") с подтверждением. Действие `Server.NewUuid` (`ActionsApiServlet`, право
+"перезапуск сервера" и "изменение настроек"): `MediaServer.renewUuid()` создает случайный UUID, пишет его в `UMS.conf` и в кэш
+`MediaServer.uuid`, затем штатный перезапуск медиасервера (`PMS.resetMediaServer()`) - UPnP-устройство создается
+заново уже с новым UUID. Текущий UUID отдает `GET /v1/api/actions` (`serverUuid`). Закладки клиентов на этот
+сервер после смены перестают работать (в них старый UUID).
+
+### Настройки в UI
+
+Custom Settings -> "Server UUID": кнопка "New server UUID" (не настройка, сразу действие).
+
+### Настройки в conf (`UMS.conf`)
+
+Своих ключей нет; меняется штатный `uuid`.
 
 ---
 
