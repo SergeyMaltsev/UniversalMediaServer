@@ -32,6 +32,7 @@ Summary:
 | Patch | What it does | Files |
 |---|---|---|
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
+| `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
@@ -117,6 +118,28 @@ None (the panel width - by dragging or with the Customize -> Navbar width slider
 | Key | Default | Value |
 |---|---|---|
 | `renderers_name` | `{}` | own device names by UUID (set from the UI) |
+
+---
+
+## custom-settings
+
+### What it does
+
+The "Custom Settings" tab in Server Settings, always visible (it does not depend on "Show advanced
+settings"). All settings of our patches that have a UI are here; the standard tabs are not changed. The component
+`CustomSettings.tsx`; the tab and the panel are added to `ServerSettings.tsx`.
+
+Sections: Root folders - the settings of `folders-root`, `playback-labels`, `position-tracker` and
+`folder-reset`, `reload-media`.
+
+### Settings in the UI
+
+The tab itself is the UI; new settings of the patches are added here, the strings - in English and Russian.
+A key can be saved from the UI only if it is in `UmsConfiguration.getWebSettingsWithDefaults()`.
+
+### Settings in conf (`UMS.conf`)
+
+No keys of its own.
 
 ---
 
