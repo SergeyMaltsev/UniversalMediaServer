@@ -649,6 +649,9 @@ public abstract class StoreItem extends StoreResource {
 								"The full filename of which is: " + getFileName() + " and the address of the renderer is: " + rendererId);
 					}
 					setLastStartSystemTime();
+					// <custom:position-tracker> Starting a file from its beginning clears its playback label
+					PlaybackPositionTracker.startedFromBeginning(self);
+					// </custom:position-tracker>
 				};
 				new Thread(r, "StartPlaying Event").start();
 			}

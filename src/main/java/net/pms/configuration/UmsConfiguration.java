@@ -436,6 +436,9 @@ public class UmsConfiguration extends BaseConfiguration {
 	private static final String KEY_SHOW_PLAYED_LABEL = "show_played_label";
 	private static final String KEY_SHOW_PROGRESS_LABEL = "show_progress_label";
 	// </custom:playback-labels>
+	// <custom:position-tracker> Key for clearing the label when a file plays from the start
+	private static final String KEY_LABEL_RESET_SECONDS = "label_reset_seconds";
+	// </custom:position-tracker>
 	private static final String KEY_SHOW_RECENTLY_PLAYED_FOLDER = "show_recently_played_folder";
 	private static final String KEY_SHOW_SERVER_SETTINGS_FOLDER = "show_server_settings_folder";
 	private static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
@@ -4698,6 +4701,15 @@ public class UmsConfiguration extends BaseConfiguration {
 	}
 	// </custom:playback-labels>
 
+	// <custom:position-tracker> Getter for clearing the label when a file plays from the start
+	/**
+	 * @return how many seconds a file must play from its beginning (no seek)
+	 * before its label is cleared, 0 = never (default 2)
+	 */
+	public int getLabelResetSeconds() {
+		return Math.max(0, getInt(KEY_LABEL_RESET_SECONDS, 2));
+	}
+	// </custom:position-tracker>
 
 
 
@@ -6166,6 +6178,9 @@ public class UmsConfiguration extends BaseConfiguration {
 		jObj.addProperty(KEY_SHOW_PLAYED_LABEL, true);
 		jObj.addProperty(KEY_SHOW_PROGRESS_LABEL, true);
 		// </custom:playback-labels>
+		// <custom:position-tracker> Web UI default for clearing the label
+		jObj.addProperty(KEY_LABEL_RESET_SECONDS, 2);
+		// </custom:position-tracker>
 		jObj.addProperty(KEY_SHOW_RECENTLY_PLAYED_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_SERVER_SETTINGS_FOLDER, false);
 		jObj.addProperty(KEY_SHOW_SPLASH_SCREEN, true);
