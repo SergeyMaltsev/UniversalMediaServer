@@ -442,6 +442,13 @@ public class UmsConfiguration extends BaseConfiguration {
 	// <custom:folder-reset> Key for the "Reset watched" item at the end of a folder
 	private static final String KEY_SHOW_FOLDER_RESET_ITEM = "show_folder_reset_item";
 	// </custom:folder-reset>
+	// <custom:reload-media> Key for the "Reload media library" item in the root
+	private static final String KEY_SHOW_CONTROL_FOLDER = "show_control_folder";
+	private static final String KEY_SHOW_HIBERNATE_ITEM = "show_hibernate_item";
+	private static final String KEY_SHOW_RELOAD_MEDIA_ITEM = "show_reload_media_item";
+	private static final String KEY_SHOW_RESTART_SERVER_ITEM = "show_restart_server_item";
+	private static final String KEY_SHOW_SHUTDOWN_ITEM = "show_shutdown_item";
+	// </custom:reload-media>
 	private static final String KEY_SHOW_RECENTLY_PLAYED_FOLDER = "show_recently_played_folder";
 	private static final String KEY_SHOW_SERVER_SETTINGS_FOLDER = "show_server_settings_folder";
 	private static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
@@ -654,6 +661,13 @@ public class UmsConfiguration extends BaseConfiguration {
 		// <custom:folder-reset> Rebuild the folders when the "Reset watched" item is switched
 		KEY_SHOW_FOLDER_RESET_ITEM,
 		// </custom:folder-reset>
+		// <custom:reload-media> Rebuild the root when the "Control" folder or its items are switched
+		KEY_SHOW_CONTROL_FOLDER,
+		KEY_SHOW_HIBERNATE_ITEM,
+		KEY_SHOW_RELOAD_MEDIA_ITEM,
+		KEY_SHOW_RESTART_SERVER_ITEM,
+		KEY_SHOW_SHUTDOWN_ITEM,
+		// </custom:reload-media>
 		KEY_SHOW_RECENTLY_PLAYED_FOLDER,
 		KEY_SHOW_SERVER_SETTINGS_FOLDER,
 		KEY_SHOW_TRANSCODE_FOLDER,
@@ -4726,6 +4740,42 @@ public class UmsConfiguration extends BaseConfiguration {
 	}
 	// </custom:folder-reset>
 
+	// <custom:reload-media> Getters for the "Control" folder in the root and its items
+	/**
+	 * @return whether the root ends with the "Control" folder
+	 */
+	public boolean isShowControlFolder() {
+		return getBoolean(KEY_SHOW_CONTROL_FOLDER, true);
+	}
+
+	/**
+	 * @return whether the "Control" folder holds "Reload media library"
+	 */
+	public boolean isShowReloadMediaItem() {
+		return getBoolean(KEY_SHOW_RELOAD_MEDIA_ITEM, true);
+	}
+
+	/**
+	 * @return whether the "Control" folder holds "Restart server"
+	 */
+	public boolean isShowRestartServerItem() {
+		return getBoolean(KEY_SHOW_RESTART_SERVER_ITEM, true);
+	}
+
+	/**
+	 * @return whether the "Control" folder holds "Hibernate computer"
+	 */
+	public boolean isShowHibernateItem() {
+		return getBoolean(KEY_SHOW_HIBERNATE_ITEM, true);
+	}
+
+	/**
+	 * @return whether the "Control" folder holds "Shut down computer"
+	 */
+	public boolean isShowShutdownItem() {
+		return getBoolean(KEY_SHOW_SHUTDOWN_ITEM, true);
+	}
+	// </custom:reload-media>
 
 	/**
 	 * Whether to show the "Recently Played" folder on the renderer.
@@ -6198,6 +6248,13 @@ public class UmsConfiguration extends BaseConfiguration {
 		// <custom:folder-reset> Web UI default for the "Reset watched" item
 		jObj.addProperty(KEY_SHOW_FOLDER_RESET_ITEM, true);
 		// </custom:folder-reset>
+		// <custom:reload-media> Web UI defaults for the "Control" folder
+		jObj.addProperty(KEY_SHOW_CONTROL_FOLDER, true);
+		jObj.addProperty(KEY_SHOW_HIBERNATE_ITEM, true);
+		jObj.addProperty(KEY_SHOW_RELOAD_MEDIA_ITEM, true);
+		jObj.addProperty(KEY_SHOW_RESTART_SERVER_ITEM, true);
+		jObj.addProperty(KEY_SHOW_SHUTDOWN_ITEM, true);
+		// </custom:reload-media>
 		jObj.addProperty(KEY_SHOW_RECENTLY_PLAYED_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_SERVER_SETTINGS_FOLDER, false);
 		jObj.addProperty(KEY_SHOW_SPLASH_SCREEN, true);

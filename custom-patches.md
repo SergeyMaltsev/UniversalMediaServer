@@ -35,6 +35,7 @@ Summary:
 | `playback-labels` | Name = file name without suffixes, `[*]` / `[h:mm:ss]` label at the end, own thresholds | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `position-tracker` | Position from the player goes into the standard watched logic, label reset when playing from the start | `PlaybackPositionTracker` (new), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
 | `folder-reset` | "Reset watched" item at the end of a folder: resets the labels of all files in the folder | `FolderResetAction` (new), `VirtualFolder`, `StoreContainer`, `UmsConfiguration`, `messages*.properties` |
+| `reload-media` | "Control" folder in the root: reload the media library, restart the server, hibernate and shut down the PC | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (new), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -320,6 +321,51 @@ Custom Settings -> Root folders: "Show the "Reset watched" item at the end of fo
 | Key | Default | Value |
 |---|---|---|
 | `show_folder_reset_item` | `true` | the "Reset watched" item at the end of folders with files (in `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS`) |
+
+---
+
+## reload-media
+
+### What it does
+
+- The root ends with the "Control" folder (`ControlFolder`) with action items, each one
+  switched on by its own setting; the folder is hidden if none of them is on:
+  ```
+  Control
+    Reload media library   MediaRescanAction
+    Restart server         ServerRestartAction
+    Hibernate computer     PowerAction HIBERNATE   (Windows only)
+    Shut down computer     PowerAction SHUT_DOWN   (Windows only)
+  ```
+- The items are standard action items (`VirtualVideoActionLocalized`), they work exactly like the built-in UMS items
+  ("Restart server", "Shut down computer" in the server settings folder): an action when the item is requested, the standard
+  video `videos/action_success-512.mpg`, the standard thumbnails (`action-ok.png`, `action-restart.png`,
+  `action-shutdown.png`). There are no own videos, delays or streams.
+- "Reload media library" calls the standard `MediaScanner.startMediaScan()`: all files of all shared folders are read
+  into the server database (the same as "Scan media library" in Shared Content), followed by the database analysis. If a scan is
+  already running, a second one is not started. Progress and time are in `debug.log` ("Media scan started" / "completed").
+- "Restart server" is the standard `PMS.get().resetMediaServer()`, like the built-in item and the "Restart server" button
+  of the web UI: the media server stops, the devices are reset, the server starts again; UMS keeps running.
+- "Hibernate computer" is `shutdown.exe /h`; "Shut down computer" is the standard `ProcessUtil.shutDownComputer()`
+  (`shutdown.exe -s -t 0`, then UMS exits cleanly). Immediately when the item is started.
+- In `debug.log`: "Media library reload / Server restart / Hibernation / Shutdown requested by <device>".
+
+### Settings in the UI
+
+Custom Settings -> "The "Control" folder" section: "Show the "Control" folder in the root",
+then the checkboxes of the items (active when the folder is on), each with a tooltip.
+
+### Settings in conf (`UMS.conf`)
+
+All keys are in `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS` (the root is rebuilt at once).
+
+| Key | Default | Value |
+|---|---|---|
+| `show_control_folder` | `true` | the "Control" folder in the root |
+| `show_reload_media_item` | `true` | "Reload media library" in the folder |
+| `show_restart_server_item` | `true` | "Restart server" in the folder |
+| `show_hibernate_item` | `true` | "Hibernate computer" in the folder (Windows only) |
+| `show_shutdown_item` | `true` | "Shut down computer" in the folder (Windows only) |
 
 ---
 

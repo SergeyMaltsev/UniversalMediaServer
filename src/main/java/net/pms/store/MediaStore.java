@@ -43,6 +43,9 @@ import net.pms.renderers.Renderer;
 import net.pms.store.container.ApertureLibraries;
 import net.pms.store.container.AudiosFeed;
 import net.pms.store.container.CodeEnter;
+// <custom:reload-media> "Control" folder in the root
+import net.pms.store.container.ControlFolder;
+// </custom:reload-media>
 import net.pms.store.container.CueFolder;
 import net.pms.store.container.DVDISOFile;
 import net.pms.store.container.DynamicPlaylist;
@@ -200,6 +203,7 @@ public class MediaStore extends StoreContainer {
 			}
 		}
 		// </custom:folders-root>
+
 		dbIdLibrary.reset(backupChildren);
 
 		if (mon != null) {
@@ -251,6 +255,12 @@ public class MediaStore extends StoreContainer {
 				}
 			}
 		}
+
+		// <custom:reload-media> "Control" folder last in the root
+		if (ControlFolder.isShown(renderer.getUmsConfiguration())) {
+			addChild(new ControlFolder(renderer));
+		}
+		// </custom:reload-media>
 
 		//now remove old children that was not added from globalids
 		clearBackupChildren();
@@ -504,6 +514,7 @@ public class MediaStore extends StoreContainer {
 			discoverChildren();
 		}
 	}
+
 
 	public void stopPlaying(StoreResource res) {
 		if (mon != null) {
