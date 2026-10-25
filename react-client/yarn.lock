@@ -1042,6 +1042,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/showdown@npm:2.0.6":
+  version: 2.0.6
+  resolution: "@types/showdown@npm:2.0.6"
+  checksum: 10c0/7136e47a9f0b871e74d8f17afcd99bca3d356f9fd81ee4ddb5361beb41be11d6d5705b86cf8f44796b6ca61caa5c4ff408029b772e436f6a1f9021bb73f36f95
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:8.71.1":
   version: 8.71.1
   resolution: "@typescript-eslint/eslint-plugin@npm:8.71.1"
@@ -1638,6 +1645,13 @@ __metadata:
   dependencies:
     delayed-stream: "npm:~1.0.0"
   checksum: 10c0/0dbb829577e1b1e839fa82b40c07ffaf7de8a09b935cadd355a73652ae70a88b4320db322f6634a4ad93424292fa80973ac6480986247f1734a1137debf271d5
+  languageName: node
+  linkType: hard
+
+"commander@npm:^9.0.0":
+  version: 9.5.0
+  resolution: "commander@npm:9.5.0"
+  checksum: 10c0/5f7784fbda2aaec39e89eb46f06a999e00224b3763dc65976e05929ec486e174fe9aac2655f03ba6a5e83875bd173be5283dc19309b7c65954701c02025b3c1d
   languageName: node
   linkType: hard
 
@@ -4022,6 +4036,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"showdown@npm:2.1.0":
+  version: 2.1.0
+  resolution: "showdown@npm:2.1.0"
+  dependencies:
+    commander: "npm:^9.0.0"
+  bin:
+    showdown: bin/showdown.js
+  checksum: 10c0/8508e060874c42338b9ebfe884763e8042d9575185d9dd3a12f7380736732893a4738f37140add97bde0c4c87d6bad66ed0761505f310df6044ee3385e2ae349
+  languageName: node
+  linkType: hard
+
 "side-channel-list@npm:^1.0.1":
   version: 1.0.1
   resolution: "side-channel-list@npm:1.0.1"
@@ -4357,6 +4382,7 @@ __metadata:
     "@types/lodash": "npm:4.17.25"
     "@types/react": "npm:19.2.18"
     "@types/react-dom": "npm:19.2.4"
+    "@types/showdown": "npm:2.0.6"
     "@vitejs/plugin-react": "npm:5.1.4"
     axios: "npm:1.20.0"
     eslint: "npm:9.39.2"
@@ -4372,6 +4398,7 @@ __metadata:
     react-movable: "npm:3.4.1"
     react-router: "npm:7.18.4"
     react-use-websocket: "npm:4.13.0"
+    showdown: "npm:2.1.0"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.71.1"
     video.js: "npm:8.23.7"

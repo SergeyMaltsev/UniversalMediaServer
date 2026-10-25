@@ -32,6 +32,7 @@ Summary:
 | Patch | What it does | Files |
 |---|---|---|
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
+| `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
 | `build-scripts` | Build scripts in `build/`, output files in `.gitignore`; the branch commit as `git.commit.id` (with uncommitted changes - `<commit>-dirty-<time>`, otherwise the browser keeps old translations); only the x86_64 installer (x86 is disabled in `pom.xml`, saves ~4 min) | `build/*`, `.gitignore`, `pom.xml` |
 
 All settings of our patches: Server Settings -> **Custom Settings** -> Root folders:
