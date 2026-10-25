@@ -30,6 +30,7 @@
 
 | Патч | Что делает | Файлы |
 |---|---|---|
+| `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `build-scripts` | Скрипты сборки в `build/`, выходные файлы в `.gitignore`; коммит ветки как `git.commit.id` (с незакоммиченными изменениями - `<коммит>-dirty-<время>`, иначе браузер держит старые переводы); только установщик x86_64 (x86 выключен в `pom.xml`, экономит ~4 мин) | `build/*`, `.gitignore`, `pom.xml` |
 
 Все настройки своих патчей: Server Settings -> **Custom Settings** -> Root folders
@@ -64,6 +65,37 @@
 ```
 <текущий UUID>  [New server UUID]           -> uuid (новый случайный) + перезапуск медиасервера
 ```
+
+---
+
+## release
+
+### Суть работы
+
+Публикация сборок Windows x64 на странице Releases форка. Запуск - `release-custom.bat` в корне рабочей папки
+(обертка над `source-custom\build\release.ps1`):
+
+1. Проверки: ветка `custom`, нет локальных изменений, ветка отправлена (`HEAD` = `origin/custom`), теги в порядке,
+   `gh` авторизован.
+2. Номер: версия из `pom.xml` без `-SNAPSHOT` + следующий номер по тегам форка: `v15.9.0-custom.1`, `.2`, ...;
+   новая версия upstream снова начинается с `.1`.
+3. Сборка `build.ps1 -Target all -CustomVersion <номер>`: номер уходит в `project.custom.version`
+   (`-Dcustom.version`), API "About" отдает его как версию - он виден на странице "О программе" и в строке
+   состояния; установщик называется `UMS-Windows-<номер>-x86_64.exe`.
+4. Файлы в `build\release\<номер>\`: установщик и `UMS-Windows-<номер>-x86_64-portable.zip` (папка программы +
+   пустая `portable\`: настройки рядом с программой), `release-notes.md` (что за редакция + коммиты с прошлого
+   релиза).
+5. Вопрос (без `-Yes`), затем аннотированный тег, push тега в `origin`, `gh release create` с двумя файлами.
+
+Ключи: `-DryRun` - только собрать и подготовить файлы, `-Yes` - без вопроса, `-Offline` - для `build.ps1`.
+
+### Настройки в UI
+
+Нет.
+
+### Настройки в conf (`UMS.conf`)
+
+Нет.
 
 ---
 

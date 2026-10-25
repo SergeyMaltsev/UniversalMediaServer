@@ -31,6 +31,7 @@ Summary:
 
 | Patch | What it does | Files |
 |---|---|---|
+| `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `build-scripts` | Build scripts in `build/`, output files in `.gitignore`; the branch commit as `git.commit.id` (with uncommitted changes - `<commit>-dirty-<time>`, otherwise the browser keeps old translations); only the x86_64 installer (x86 is disabled in `pom.xml`, saves ~4 min) | `build/*`, `.gitignore`, `pom.xml` |
 
 All settings of our patches: Server Settings -> **Custom Settings** -> Root folders:
@@ -64,6 +65,36 @@ Server UUID section (patch `server-uuid`):
 ```
 <current UUID>  [New server UUID]           -> uuid (new random) + restart of the media server
 ```
+
+---
+
+## release
+
+### What it does
+
+Publishing of Windows x64 builds on the Releases page of the fork. Start - `release-custom.bat` in the root of the working folder
+(a wrapper over `source-custom\build\release.ps1`):
+
+1. Checks: branch `custom`, no local changes, the branch is pushed (`HEAD` = `origin/custom`), tags in order,
+   `gh` is authorized.
+2. Number: the version from `pom.xml` without `-SNAPSHOT` + the next number by the fork's tags: `v15.9.0-custom.1`, `.2`, ...;
+   a new upstream version starts again from `.1`.
+3. Build `build.ps1 -Target all -CustomVersion <number>`: the number goes to `project.custom.version`
+   (`-Dcustom.version`), the "About" API returns it as the version - it is shown on the "About" page and in the status line; the installer is called `UMS-Windows-<number>-x86_64.exe`.
+4. Files in `build\release\<number>\`: the installer and `UMS-Windows-<number>-x86_64-portable.zip` (the program folder +
+   an empty `portable\`: the settings sit next to the program), `release-notes.md` (what edition it is + the commits since the last
+   release).
+5. A question (without `-Yes`), then an annotated tag, push of the tag to `origin`, `gh release create` with the two files.
+
+Keys: `-DryRun` - only build and prepare the files, `-Yes` - without the question, `-Offline` - for `build.ps1`.
+
+### Settings in the UI
+
+None.
+
+### Settings in conf (`UMS.conf`)
+
+None.
 
 ---
 

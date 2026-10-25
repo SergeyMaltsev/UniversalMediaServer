@@ -53,7 +53,14 @@ public class AboutApiServlet extends GuiHttpServlet {
 			if (path.equals("/")) {
 				JsonObject jsonResponse = new JsonObject();
 				jsonResponse.addProperty("app", PropertiesUtil.getProjectProperties().get("project.name"));
-				jsonResponse.addProperty("version", PMS.getVersion());
+				// <custom-remove:release>
+				// jsonResponse.addProperty("version", PMS.getVersion());
+				// </custom-remove:release>
+				// <custom:release> The custom edition release number (e.g. 15.9.0-custom.1) when built by build/release.ps1
+				String customVersion = PropertiesUtil.getProjectProperties().get("project.custom.version");
+				boolean released = customVersion != null && !customVersion.isBlank() && !customVersion.startsWith("${");
+				jsonResponse.addProperty("version", released ? customVersion : PMS.getVersion());
+				// </custom:release>
 				String commitId = PropertiesUtil.getProjectProperties().get("git.commit.id");
 				jsonResponse.addProperty("commit", commitId.substring(0, 9) + " (" + PropertiesUtil.getProjectProperties().get("git.commit.time") + ")");
 				jsonResponse.addProperty("commitUrl", "https://github.com/UniversalMediaServer/UniversalMediaServer/tree/" + commitId);
