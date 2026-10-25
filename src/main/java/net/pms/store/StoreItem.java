@@ -66,6 +66,9 @@ import net.pms.store.item.VirtualVideoAction;
 import net.pms.store.item.WebStream;
 import net.pms.util.ByteRange;
 import net.pms.util.FileUtil;
+// <custom:playback-labels> Web Player title labels
+import net.pms.util.FullyPlayed;
+// </custom:playback-labels>
 import net.pms.util.IPushOutput;
 import net.pms.util.InputFile;
 import net.pms.util.Iso639;
@@ -1191,6 +1194,11 @@ public abstract class StoreItem extends StoreResource {
 	}
 
 	public String getLocalizedResumeName(String lang) {
+		// <custom:playback-labels> Web Player titles like the DLNA ones: no suffix for plain files, "[*]" / "[h:mm:ss]" label
+		if (this instanceof RealFile && !isInsideTranscodeFolder()) {
+			return resumeStr(FullyPlayed.addPlaybackLabel(getDisplayName(false), this));
+		}
+		// </custom:playback-labels>
 		return resumeStr(getLocalizedDisplayName(lang));
 	}
 

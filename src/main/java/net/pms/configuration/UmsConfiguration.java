@@ -429,6 +429,13 @@ public class UmsConfiguration extends BaseConfiguration {
 	private static final String KEY_ALLOW_DISK_OPERATIONS = "allow_disk_operations";
 	private static final String KEY_USE_RECYCLE_BIN = "use_recycle_bin";
 	// </custom:folders-root>
+	// <custom:playback-labels> Keys for the "[h:mm:ss]" / "[*]" title labels
+	private static final String KEY_PLAYBACK_LABEL_POSITION = "playback_label_position";
+	private static final String KEY_PLAYED_LABEL_PERCENT = "played_label_percent";
+	private static final String KEY_PROGRESS_LABEL_MIN_PERCENT = "progress_label_min_percent";
+	private static final String KEY_SHOW_PLAYED_LABEL = "show_played_label";
+	private static final String KEY_SHOW_PROGRESS_LABEL = "show_progress_label";
+	// </custom:playback-labels>
 	private static final String KEY_SHOW_RECENTLY_PLAYED_FOLDER = "show_recently_played_folder";
 	private static final String KEY_SHOW_SERVER_SETTINGS_FOLDER = "show_server_settings_folder";
 	private static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
@@ -602,6 +609,20 @@ public class UmsConfiguration extends BaseConfiguration {
 		KEY_LANGUAGE
 	);
 
+	// <custom:playback-labels> Label keys: titles are built on every browse, the clients only need to browse again
+	/**
+	 * The set of the playback label keys. A change increments the system update
+	 * id (clients browse again and get the new titles); the media stores are
+	 * not rebuilt.
+	 */
+	public static final Set<String> NEED_RENDERERS_TITLES_REFRESH_FLAGS = Set.of(
+		KEY_PLAYBACK_LABEL_POSITION,
+		KEY_PLAYED_LABEL_PERCENT,
+		KEY_PROGRESS_LABEL_MIN_PERCENT,
+		KEY_SHOW_PLAYED_LABEL,
+		KEY_SHOW_PROGRESS_LABEL
+	);
+	// </custom:playback-labels>
 
 	/**
 	 * The set of keys defining when the renderers has to rebuild their media store
@@ -4637,6 +4658,45 @@ public class UmsConfiguration extends BaseConfiguration {
 	}
 	// </custom:folders-root>
 
+	// <custom:playback-labels> Getters for the "[h:mm:ss]" / "[*]" title labels
+	/**
+	 * @return whether titles get the stopped position label "[h:mm:ss]"
+	 */
+	public boolean isShowProgressLabel() {
+		return getBoolean(KEY_SHOW_PROGRESS_LABEL, true);
+	}
+
+	/**
+	 * @return whether titles get the played label "[*]"
+	 */
+	public boolean isShowPlayedLabel() {
+		return getBoolean(KEY_SHOW_PLAYED_LABEL, true);
+	}
+
+	/**
+	 * @return the share of the duration (0..1) from which a stopped position
+	 * counts as started and gets the "[h:mm:ss]" label (default 5%)
+	 */
+	public double getProgressLabelMinFraction() {
+		return Math.max(0, Math.min(100, getInt(KEY_PROGRESS_LABEL_MIN_PERCENT, 5))) / 100.0;
+	}
+
+	/**
+	 * @return the share of the duration (0..1) from which a stopped position
+	 * counts as played and gets the "[*]" label (default 95%)
+	 */
+	public double getPlayedLabelFraction() {
+		return Math.max(0, Math.min(100, getInt(KEY_PLAYED_LABEL_PERCENT, 95))) / 100.0;
+	}
+
+	/**
+	 * @return whether the label goes before the title
+	 * ({@code playback_label_position}: "start", the default, or "end")
+	 */
+	public boolean isPlaybackLabelAtStart() {
+		return !"end".equalsIgnoreCase(getString(KEY_PLAYBACK_LABEL_POSITION, "start").trim());
+	}
+	// </custom:playback-labels>
 
 
 
@@ -6099,6 +6159,13 @@ public class UmsConfiguration extends BaseConfiguration {
 		jObj.addProperty(KEY_ALLOW_DISK_OPERATIONS, false);
 		jObj.addProperty(KEY_USE_RECYCLE_BIN, true);
 		// </custom:folders-root>
+		// <custom:playback-labels> Web UI defaults for the title labels
+		jObj.addProperty(KEY_PLAYBACK_LABEL_POSITION, "start");
+		jObj.addProperty(KEY_PLAYED_LABEL_PERCENT, 95);
+		jObj.addProperty(KEY_PROGRESS_LABEL_MIN_PERCENT, 5);
+		jObj.addProperty(KEY_SHOW_PLAYED_LABEL, true);
+		jObj.addProperty(KEY_SHOW_PROGRESS_LABEL, true);
+		// </custom:playback-labels>
 		jObj.addProperty(KEY_SHOW_RECENTLY_PLAYED_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_SERVER_SETTINGS_FOLDER, false);
 		jObj.addProperty(KEY_SHOW_SPLASH_SCREEN, true);

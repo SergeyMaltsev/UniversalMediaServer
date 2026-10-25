@@ -194,23 +194,40 @@ public class DidlHelper extends DlnaHelper {
 			title = renderer.getUseSameExtension(resource.getDisplayName(false));
 		}
 
-		if (
-			!renderer.isThumbnails() &&
-			resource instanceof RealFile realfile &&
-			realfile.isFullyPlayedMark()
-		) {
-			title = FullyPlayed.addFullyPlayedNamePrefix(title, resource);
+		// <custom-remove:playback-labels>
+		// if (
+		// 	!renderer.isThumbnails() &&
+		// 	resource instanceof RealFile realfile &&
+		// 	realfile.isFullyPlayedMark()
+		// ) {
+		// 	title = FullyPlayed.addFullyPlayedNamePrefix(title, resource);
+		// }
+		// </custom-remove:playback-labels>
+		// <custom:playback-labels> Label from the DB at the end of the title: "[*]" fully played, "[h:mm:ss]" stopped position
+		if (resource instanceof RealFile) {
+			title = FullyPlayed.addPlaybackLabel(title, resource);
 		}
+		// </custom:playback-labels>
 
 		if (item != null) {
 			title = item.resumeStr(title);
 		}
+		// <custom-remove:playback-labels>
+		// addXMLTagAndAttribute(sb, "dc:title",
+		// 	encodeXML(renderer.getDcTitle(title, resource.getDisplayNameSuffix(), resource)));
+		//
+		// if (renderer.isSamsung() && resource instanceof RealFile) {
+		// 	addBookmark(resource, sb, renderer.getDcTitle(title, resource.getDisplayNameSuffix(), resource));
+		// }
+		// </custom-remove:playback-labels>
+		// <custom:playback-labels> No {Audio: ...} / {... subtitles} suffix for plain files (kept in #--TRANSCODE--# and for virtual items)
 		addXMLTagAndAttribute(sb, "dc:title",
-			encodeXML(renderer.getDcTitle(title, resource.getDisplayNameSuffix(), resource)));
+			encodeXML(renderer.getDcTitle(title, FullyPlayed.getTitleSuffix(resource), resource)));
 
 		if (renderer.isSamsung() && resource instanceof RealFile) {
-			addBookmark(resource, sb, renderer.getDcTitle(title, resource.getDisplayNameSuffix(), resource));
+			addBookmark(resource, sb, renderer.getDcTitle(title, FullyPlayed.getTitleSuffix(resource), resource));
 		}
+		// </custom:playback-labels>
 
 		if (audioMetadata != null && renderer.isSendDateMetadataYearForAudioTags() && audioMetadata.getYear() > 1000) {
 			addXMLTagAndAttribute(sb, "dc:date", Integer.toString(audioMetadata.getYear()));

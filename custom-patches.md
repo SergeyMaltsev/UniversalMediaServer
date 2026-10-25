@@ -32,6 +32,7 @@ Summary:
 | Patch | What it does | Files |
 |---|---|---|
 | `folders-root` | "Folders" folder (own name) in the root instead of the shared folders; "Folder management" web UI page | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (new), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (new), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
+| `playback-labels` | Name = file name without suffixes, `[*]` / `[h:mm:ss]` label at the end, own thresholds | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -203,6 +204,57 @@ Custom Settings -> Root folders:
 | `folders_container_name` | `""` | own folder name; empty - "Folders" (localized by the UI language; in `VALID_EMPTY_KEYS`, can be cleared from the UI) |
 | `allow_disk_operations` | `false` | `true` - disk delete buttons on the "Folder management" page |
 | `use_recycle_bin` | `true` | `true` - delete to the Windows Recycle Bin, `false` - permanently |
+
+---
+
+## playback-labels
+
+### What it does
+
+- Name for clients (DLNA: `DidlHelper`, `StoreResourceHelper`; web player: `StoreItem.getLocalizedResumeName`)
+  = display name without the suffix (`{Audio: ...}`, `{English subtitles}`); the extension - by the standard settings.
+  The suffix is removed only from ordinary files (`FullyPlayed.getTitleSuffix`): in `#--TRANSCODE--#` and in virtual
+  entries (DVD chapters) it stays, there it tells the variants apart.
+- A label from the server database data (`FILES_STATUS`) is added at the start of the name (by default) or at the end (`playback_label_position`),
+  `FullyPlayed.addPlaybackLabel`:
+  ```
+  <name.ext>              no stop point, or it is less than "Started from"
+  [mm:ss] <name.ext>      stop point from "Started from" and less than "Played from"
+  [h:mm:ss] <name.ext>    the same, the point is more than an hour
+  [*] <name.ext>          marked in the database as played (standard or manually) or the point is from "Played from"
+  ```
+  At the end (`end`): `<name.ext> [*]`. At the start the label is visible also for long names that the client cuts.
+  Each label can be switched off (`show_progress_label`, `show_played_label`). The thresholds are our own, not `resume_back`.
+- The stop point is always written to the database (standard, `MediaMonitor`); the thresholds affect only the display.
+- Does not depend on `resume` ("Enable video resuming"): it controls only the virtual "Resume: ..." entries and the
+  files of `data\resume\`. `resume = false` is recommended - no extra entries for one file.
+- Status is stored only for files in shared folders with the "monitored" checkbox (the standard UMS rule).
+- Folders have no label: UMS does not store the watch status for folders; the folder block in `StoreResourceHelper` is kept
+  in case upstream adds it.
+- The label is set regardless of whether the device shows thumbnails (standard `[Watched]` only without thumbnails).
+  The standard `FullyPlayed.addFullyPlayedNamePrefix` is not touched (it is no longer called).
+- The file address (`<res>`) does not change: it contains the file name, not the display title.
+- Titles are built at each play, so the label keys do not rebuild the media libraries: changing them only
+  increases SystemUpdateID (`NEED_RENDERERS_TITLES_REFRESH_FLAGS`, handled in `PMS`), and clients reread
+  the folders and get the new titles.
+
+### Settings in the UI
+
+Custom Settings -> Root folders:
+- "Label position": "At the start: [*] name.ext" / "At the end: name.ext [*]";
+- "Show the progress label [h:mm:ss]" and "Started from (% of the duration)";
+- "Show the played label [*]" and "Played from (% of the duration)".
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Value |
+|---|---|---|
+| `playback_label_position` | `start` | `start` - label before the name, `end` - after it |
+| `show_progress_label` | `true` | the `[h:mm:ss]` label |
+| `progress_label_min_percent` | `5` | from which share of the duration (0..100) the stop point is shown |
+| `show_played_label` | `true` | the `[*]` label |
+| `played_label_percent` | `95` | from which share of the duration (0..100) the file counts as played for the label |
+| `resume` | `false` recommended | without the virtual "Resume: ..." entries |
 
 ---
 

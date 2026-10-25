@@ -155,13 +155,20 @@ public class StoreResourceHelper {
 		result.setParentID(resourceId);
 		result.setRestricted(true);
 		String title = container.getDisplayName(false);
-		if (
-			!renderer.isThumbnails() &&
-			container instanceof RealFolder realfolder &&
-			realfolder.isFullyPlayedMark()
-		) {
-			title = FullyPlayed.addFullyPlayedNamePrefix(title, container);
+		// <custom-remove:playback-labels>
+		// if (
+		// 	!renderer.isThumbnails() &&
+		// 	container instanceof RealFolder realfolder &&
+		// 	realfolder.isFullyPlayedMark()
+		// ) {
+		// 	title = FullyPlayed.addFullyPlayedNamePrefix(title, container);
+		// }
+		// </custom-remove:playback-labels>
+		// <custom:playback-labels> "[*]" at the end of a fully played folder title
+		if (container instanceof RealFolder) {
+			title = FullyPlayed.addPlaybackLabel(title, container);
 		}
+		// </custom:playback-labels>
 
 		result.setTitle(renderer.getDcTitle(title, container.getDisplayNameSuffix(), container));
 		if (renderer.isSendFolderThumbnails() || container instanceof DVDISOFile) {
@@ -284,16 +291,28 @@ public class StoreResourceHelper {
 		} else {
 			title = renderer.getUseSameExtension(item.getDisplayName(false));
 		}
-		if (
-			!renderer.isThumbnails() &&
-			item instanceof RealFile realfile &&
-			realfile.isFullyPlayedMark()
-		) {
-			title = FullyPlayed.addFullyPlayedNamePrefix(title, item);
+		// <custom-remove:playback-labels>
+		// if (
+		// 	!renderer.isThumbnails() &&
+		// 	item instanceof RealFile realfile &&
+		// 	realfile.isFullyPlayedMark()
+		// ) {
+		// 	title = FullyPlayed.addFullyPlayedNamePrefix(title, item);
+		// }
+		// </custom-remove:playback-labels>
+		// <custom:playback-labels> Label from the DB at the end of the title: "[*]" fully played, "[h:mm:ss]" stopped position
+		if (item instanceof RealFile) {
+			title = FullyPlayed.addPlaybackLabel(title, item);
 		}
+		// </custom:playback-labels>
 
 		title = item.resumeStr(title);
-		result.setTitle(renderer.getDcTitle(title, item.getDisplayNameSuffix(), item));
+		// <custom-remove:playback-labels>
+		// result.setTitle(renderer.getDcTitle(title, item.getDisplayNameSuffix(), item));
+		// </custom-remove:playback-labels>
+		// <custom:playback-labels> No {Audio: ...} / {... subtitles} suffix for plain files (kept in #--TRANSCODE--# and for virtual items)
+		result.setTitle(renderer.getDcTitle(title, FullyPlayed.getTitleSuffix(item), item));
+		// </custom:playback-labels>
 
 		if (renderer.isSamsung() && item instanceof RealFile && item.getMediaStatus() != null) {
 			LOGGER.debug("Setting bookmark for {} => {}", title, item.getMediaStatus().getBookmark());

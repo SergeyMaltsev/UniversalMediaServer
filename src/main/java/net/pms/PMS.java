@@ -88,6 +88,9 @@ import net.pms.service.Services;
 import net.pms.store.MediaInfoStore;
 import net.pms.store.MediaScanner;
 import net.pms.store.MediaStatusStore;
+// <custom:playback-labels> Label settings refresh the clients
+import net.pms.store.MediaStoreIds;
+// </custom:playback-labels>
 import net.pms.store.ThumbnailStore;
 import net.pms.store.container.CodeEnter;
 import net.pms.swing.LanguageSelection;
@@ -351,6 +354,10 @@ public class PMS {
 					resetLanguage();
 				} else if (UmsConfiguration.NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS.contains(event.getPropertyName())) {
 					resetRenderersMediaStore();
+				// <custom:playback-labels> Label settings: clients browse again for the new titles
+				} else if (UmsConfiguration.NEED_RENDERERS_TITLES_REFRESH_FLAGS.contains(event.getPropertyName())) {
+					MediaStoreIds.incrementSystemUpdateId();
+				// </custom:playback-labels>
 				}
 				GuiManager.setConfigurationChanged(event.getPropertyName());
 			}

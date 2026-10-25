@@ -31,6 +31,7 @@
 | Патч | Что делает | Файлы |
 |---|---|---|
 | `folders-root` | Папка "Folders" (свое имя) в корне вместо общих папок; страница "Folder management" веб-интерфейса | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (новые), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (новые), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
+| `playback-labels` | Название = имя файла без суффиксов, метка `[*]` / `[h:mm:ss]` в конце, свои пороги | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -212,6 +213,60 @@ Custom Settings -> Root folders:
 | `folders_container_name` | `""` | свое имя папки; пусто - "Folders" / "Папки" (в `VALID_EMPTY_KEYS`, можно очистить из интерфейса) |
 | `allow_disk_operations` | `false` | `true` - кнопки удаления с диска на странице "Folder management" |
 | `use_recycle_bin` | `true` | `true` - удаление в корзину Windows, `false` - безвозвратно |
+
+---
+
+## playback-labels
+
+### Суть работы
+
+- Название для клиентов (DLNA: `DidlHelper`, `StoreResourceHelper`; веб-плеер: `StoreItem.getLocalizedResumeName`)
+  = отображаемое имя без суффикса (`{Audio: ...}`, `{English субтитры}`); расширение - по штатным настройкам.
+  Суффикс убирается только у обычных файлов (`FullyPlayed.getTitleSuffix`): в `#--TRANSCODE--#` и у виртуальных
+  записей (главы DVD) он остается, там он различает варианты.
+- В начало названия (по умолчанию) или в конец (`playback_label_position`) добавляется метка по данным базы
+  сервера (`FILES_STATUS`), `FullyPlayed.addPlaybackLabel`:
+  ```
+  <имя.ext>              точки остановки нет или она меньше "Started from"
+  [mm:ss] <имя.ext>      точка остановки от "Started from" и меньше "Played from"
+  [h:mm:ss] <имя.ext>    то же, точка больше часа
+  [*] <имя.ext>          отмечен в базе как просмотренный (штатно или вручную) или точка от "Played from"
+  ```
+  В конце (`end`): `<имя.ext> [*]`. В начале метка видна и у длинных названий, которые клиент обрезает.
+  Каждую метку можно выключить (`show_progress_label`, `show_played_label`). Пороги - свои, не `resume_back`.
+- В базу всегда пишется точка остановки (штатно, `MediaMonitor`); пороги влияют только на отображение.
+- Не зависит от `resume` ("Enable video resuming"): он управляет только виртуальными записями "Resume: ..." и
+  файлами `data\resume\`. Рекомендуется `resume = false` - никаких дополнительных записей для одного файла.
+- Статус хранится только для файлов в общих папках с галочкой "monitored" (штатное правило UMS).
+- У папок метки нет: UMS не хранит статус просмотра для папок; блок для папок в `StoreResourceHelper` оставлен на
+  случай, если upstream это добавит.
+- Метка ставится независимо от того, показывает ли устройство миниатюры (штатно `[Watched]` только без миниатюр).
+  Штатный `FullyPlayed.addFullyPlayedNamePrefix` не трогается (больше не вызывается).
+- Адрес файла (`<res>`) не меняется: в нем имя файла, а не отображаемое название.
+- Названия строятся при каждом просмотре, поэтому ключи меток не перестраивают медиатеки: их изменение только
+  увеличивает SystemUpdateID (`NEED_RENDERERS_TITLES_REFRESH_FLAGS`, обработка в `PMS`), клиенты перечитывают
+  папки и получают новые названия.
+
+### Настройки в UI
+
+Custom Settings -> Root folders:
+- "Label position" ("Место метки"): "At the start: [*] name.ext" / "At the end: name.ext [*]"
+  ("В начале: [*] имя.ext" / "В конце: имя.ext [*]");
+- "Show the progress label [h:mm:ss]" ("Показывать метку точки остановки [h:mm:ss]") и
+  "Started from (% of the duration)" ("Начато от (% длительности)");
+- "Show the played label [*]" ("Показывать метку просмотренного [*]") и
+  "Played from (% of the duration)" ("Просмотрено от (% длительности)").
+
+### Настройки в conf (`UMS.conf`)
+
+| Ключ | По умолчанию | Значение |
+|---|---|---|
+| `playback_label_position` | `start` | `start` - метка перед названием, `end` - после |
+| `show_progress_label` | `true` | метка `[h:mm:ss]` |
+| `progress_label_min_percent` | `5` | с какой доли длительности (0..100) точка остановки показывается |
+| `show_played_label` | `true` | метка `[*]` |
+| `played_label_percent` | `95` | с какой доли длительности (0..100) файл считается просмотренным для метки |
+| `resume` | рекомендуется `false` | без виртуальных записей "Resume: ..." |
 
 ---
 

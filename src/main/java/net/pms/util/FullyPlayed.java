@@ -23,12 +23,22 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import net.pms.Messages;
+// <custom:playback-labels> Label settings
+import net.pms.PMS;
+import net.pms.configuration.UmsConfiguration;
+// </custom:playback-labels>
 import net.pms.formats.Format;
 import net.pms.image.BufferedImageFilter;
 import net.pms.image.NonGeometricBufferedImageOp;
+// <custom:playback-labels> Played position from the server database
+import net.pms.media.MediaStatus;
+// </custom:playback-labels>
 import net.pms.media.MediaType;
 import net.pms.store.StoreItem;
 import net.pms.store.StoreResource;
+// <custom:playback-labels> Plain files get no title suffix
+import net.pms.store.item.RealFile;
+// </custom:playback-labels>
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +95,92 @@ public class FullyPlayed {
 			default -> String.format("[%s] %s", Messages.getString("Played"), displayName);
 		};
 	}
+
+	// <custom:playback-labels> "<name> [*]" / "<name> [h:mm:ss]" labels from the server database
+	/**
+	 * Appends the playback label from the server database to the name,
+	 * with the plugin's own settings (independent of "resume"):
+	 * <ul>
+	 * <li>{@code "<name> [*]"} - played: marked fully played in the database,
+	 * or stopped at {@code played_label_percent} or later
+	 * ({@code show_played_label});</li>
+	 * <li>{@code "<name> [h:mm:ss]"} - stopped position from
+	 * {@code progress_label_min_percent} on, hours only past one hour
+	 * ({@code show_progress_label});</li>
+	 * <li>nothing otherwise.</li>
+	 * </ul>
+	 *
+	 * @param displayName the {@link String} to label.
+	 * @param resource the {@link StoreResource} representing the media.
+	 * @return The labelled {@link String}.
+	 */
+	public static String addPlaybackLabel(String displayName, StoreResource resource) {
+		UmsConfiguration configuration = resource.getDefaultRenderer() != null ?
+			resource.getDefaultRenderer().getUmsConfiguration() : PMS.getConfiguration();
+		MediaStatus status = resource.getMediaStatus();
+		double position = status != null && status.getLastPlaybackPosition() != null ? status.getLastPlaybackPosition() : 0;
+		double duration = resource.getMediaInfo() != null ? resource.getMediaInfo().getDurationInSeconds() : 0;
+		return addPlaybackLabel(displayName, resource.isFullyPlayed(), position, duration, configuration);
+	}
+
+	/**
+	 * Same as {@link #addPlaybackLabel(String, StoreResource)} from the raw
+	 * status values (folder management page of the web UI).
+	 *
+	 * @param fullyPlayed marked fully played in the database
+	 * @param position the stopped position in seconds, 0 if none
+	 * @param duration the duration in seconds, 0 if unknown
+	 */
+	public static String addPlaybackLabel(String displayName, boolean fullyPlayed, double position, double duration, UmsConfiguration configuration) {
+		if (isPlayed(fullyPlayed, position, duration, configuration)) {
+			return configuration.isShowPlayedLabel() ? withLabel(displayName, "[*]", configuration) : displayName;
+		}
+		if (configuration.isShowProgressLabel() && position > 0 && duration > 0 &&
+				position >= duration * configuration.getProgressLabelMinFraction()) {
+			return withLabel(displayName, "[" + formatPosition(position) + "]", configuration);
+		}
+		return displayName;
+	}
+
+	/**
+	 * @return whether the media counts as played for the "[*]" label: marked
+	 * fully played, or stopped at {@code played_label_percent} or later.
+	 */
+	public static boolean isPlayed(boolean fullyPlayed, double position, double duration, UmsConfiguration configuration) {
+		return fullyPlayed || duration > 0 && position >= duration * configuration.getPlayedLabelFraction();
+	}
+
+	/**
+	 * @return the label before the title ({@code playback_label_position =
+	 * start}, default: long titles are cut on the screen) or after it.
+	 */
+	private static String withLabel(String displayName, String label, UmsConfiguration configuration) {
+		return configuration.isPlaybackLabelAtStart() ? label + " " + displayName : displayName + " " + label;
+	}
+
+	/**
+	 * @return the title suffix to show: none for plain files, the standard one
+	 * inside the #--TRANSCODE--# folder and for virtual items (e.g. DVD titles),
+	 * where the suffix is what tells the entries apart.
+	 */
+	public static String getTitleSuffix(StoreResource resource) {
+		if (resource instanceof RealFile && !resource.isInsideTranscodeFolder()) {
+			return null;
+		}
+		return resource.getDisplayNameSuffix();
+	}
+
+	/**
+	 * @return {@code "mm:ss"}, or {@code "h:mm:ss"} from one hour on.
+	 */
+	public static String formatPosition(double seconds) {
+		long total = (long) seconds;
+		long hours = total / 3600;
+		long minutes = (total % 3600) / 60;
+		long secs = total % 60;
+		return hours > 0 ? String.format("%d:%02d:%02d", hours, minutes, secs) : String.format("%02d:%02d", minutes, secs);
+	}
+	// </custom:playback-labels>
 
 	private static BufferedImage getThumbnailOverlayImage() {
 		BufferedImage tmpThumbnailOverlayImage = null;
