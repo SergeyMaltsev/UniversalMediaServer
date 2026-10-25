@@ -417,6 +417,20 @@ public class VirtualFolder extends StoreContainer {
 				emptyFolderNowNotEmpty;
 	}
 
+	// <custom:settings-reload> Forget the discovered content, discover it again on the next browse
+	/**
+	 * Clears the children and the discovery state, so the next browse
+	 * discovers the folder again (with the current settings).
+	 * {@link #discoverChildren()} returns at once while {@code discoverable}
+	 * is set, so clearing the children alone would leave the folder empty.
+	 */
+	public synchronized void forgetChildren() {
+		discoverable = null;
+		emptyFoldersToRescan = null;
+		clearChildren();
+		setDiscovered(false);
+	}
+	// </custom:settings-reload>
 
 	@Override
 	public synchronized void doRefreshChildren() {

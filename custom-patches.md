@@ -38,6 +38,7 @@ Summary:
 | `reload-media` | "Control" folder in the root: reload the media library, restart the server, hibernate and shut down the PC | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (new), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
+| `settings-reload` | Changing a setting rebuilds the shared folders too, not only the root | `MediaStore`, `Renderer` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
@@ -503,3 +504,27 @@ None.
 
 ---
 
+## settings-reload
+
+### What it does
+
+Fix for an upstream bug. The settings from `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS` (`disable_transcoding`,
+`force_transcode_for_extensions`, `disable_transcode_for_extensions`, `chapter_support`, `hide_empty_folders`,
+`show_folders_container`, ...) call `Renderer.resetMediaStore()`. The standard `MediaStore.reset()` rebuilds only the root, while the folders
+already open and their files are reused as they were. So, for example, after turning transcoding off, the files in the folders opened earlier kept being transcoded (their
+`transcodingSettings` are assigned once, when the folder is built) - until "Restart server".
+
+The patch: `Renderer.resetMediaStore()` calls `MediaStore.resetAll()`: the content of the shared folders (folders, virtual
+folders, "Folders") is cleared, the folders are marked as not built, the root is rebuilt. For real and virtual
+folders - `VirtualFolder.forgetChildren()`: the internal `discoverable` is also reset, otherwise a reused
+root folder (with "Folders" off) left `discoverChildren()` empty at once on the next opening. At the next opening of a folder
+its files are created again with the current settings. The Media Library is not touched (its folders are built once). The file ids
+do not change (they are taken from the database). A client with an open folder has to reopen it.
+
+### Settings in the UI
+
+None.
+
+### Settings in conf (`UMS.conf`)
+
+None.

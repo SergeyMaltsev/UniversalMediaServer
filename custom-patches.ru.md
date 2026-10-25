@@ -37,6 +37,7 @@
 | `reload-media` | Папка "Control" в корне: обновить медиатеку, перезапуск сервера, гибернация и выключение ПК | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (новые), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
+| `settings-reload` | Изменение настройки перестраивает и общие папки, а не только корень | `MediaStore`, `Renderer` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
@@ -525,3 +526,28 @@ UMS. Все картинки сделаны из него (Pillow, ресайз 
 
 ---
 
+## settings-reload
+
+### Суть работы
+
+Исправление ошибки upstream. Настройки из `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS` (`disable_transcoding`,
+`force_transcode_for_extensions`, `disable_transcode_for_extensions`, `chapter_support`, `hide_empty_folders`,
+`show_folders_container`, ...) вызывают `Renderer.resetMediaStore()`. Штатно это `MediaStore.reset()`:
+перестраивается только корень, а уже открытые папки и их файлы переиспользуются как были. Поэтому, например,
+после выключения транскодирования файлы в открытых ранее папках продолжали транскодироваться (их
+`transcodingSettings` назначаются один раз при построении папки) - до "Restart server".
+
+Патч: `Renderer.resetMediaStore()` вызывает `MediaStore.resetAll()`: содержимое общих папок (папки, виртуальные
+папки, "Folders") очищается, папки помечаются непостроенными, корень перестраивается. Для реальных и виртуальных
+папок - `VirtualFolder.forgetChildren()`: сбрасывается и внутреннее `discoverable`, иначе переиспользованная
+папка корня (при выключенной "Folders") при следующем открытии сразу выходила из `discoverChildren()` пустой. При следующем открытии папки
+файлы создаются заново с текущими настройками. Media Library не трогается (ее папки строятся один раз). Id файлов
+не меняются (берутся из базы). Клиенту с открытой папкой нужно переоткрыть ее.
+
+### Настройки в UI
+
+Нет.
+
+### Настройки в conf (`UMS.conf`)
+
+Нет.

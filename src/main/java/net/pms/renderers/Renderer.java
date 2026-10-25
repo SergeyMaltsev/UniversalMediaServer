@@ -300,12 +300,31 @@ public class Renderer extends RendererDeviceConfiguration {
 		}
 	}
 
-	public synchronized void resetMediaStore() {
-		clearSharedFolders();
-		if (mediaStore != null) {
-			mediaStore.reset();
+	// <custom-remove:settings-reload>
+	// public synchronized void resetMediaStore() {
+	// 	clearSharedFolders();
+	// 	if (mediaStore != null) {
+	// 		mediaStore.reset();
+	// 	}
+	// }
+	// </custom-remove:settings-reload>
+	// <custom:settings-reload> Rebuild the shared folders too, not only the root (changed settings reach the files)
+	/**
+	 * Rebuilds the media store with the shared folders. {@code resetAll()}
+	 * runs outside the renderer lock: it locks the folders, and a browsing
+	 * thread holds a folder lock while it calls {@link #getMediaStore()}.
+	 */
+	public void resetMediaStore() {
+		MediaStore store;
+		synchronized (this) {
+			clearSharedFolders();
+			store = mediaStore;
+		}
+		if (store != null) {
+			store.resetAll();
 		}
 	}
+	// </custom:settings-reload>
 
 	public synchronized void addFolderLimit(StoreResource res) {
 		if (mediaStore != null) {

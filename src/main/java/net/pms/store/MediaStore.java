@@ -515,6 +515,28 @@ public class MediaStore extends StoreContainer {
 		}
 	}
 
+	// <custom:settings-reload> Full reset of the shared folders, so a changed setting reaches the files inside them
+	/**
+	 * Like {@link #reset()}, but also forgets the content of the shared
+	 * folders (real and virtual folders, the "Folders" container): their
+	 * files are created again on the next browse, with the current settings
+	 * (transcoding, labels, ...). {@link #reset()} only rebuilds the root and
+	 * keeps the already discovered folders and their files as they were.
+	 * The Media Library is kept (its folders are built once). Object ids
+	 * stay the same: they come from the database (parent + name).
+	 */
+	public synchronized void resetAll() {
+		for (StoreResource child : new ArrayList<>(getChildren())) {
+			if (child instanceof VirtualFolder folder) {
+				// Real and virtual shared folders are reused by reset(): their discovery state must go too
+				folder.forgetChildren();
+			}
+		}
+		foldersContainer.clearChildren();
+		foldersContainer.setDiscovered(false);
+		reset();
+	}
+	// </custom:settings-reload>
 
 	public void stopPlaying(StoreResource res) {
 		if (mon != null) {
