@@ -1411,6 +1411,9 @@
 							<execution>
 								<id>build-setup-windows-x86</id>
 								<configuration>
+									<!-- <custom:build-scripts> No 32-bit installer: not needed, its NSIS step took about 4 minutes -->
+									<disabled>true</disabled>
+									<!-- </custom:build-scripts> -->
 									<outputFile>${project.build.directory}/${project.name.short}-x86.exe</outputFile>
 									<scriptFile>${project.build.directory}/setup-x86.nsi</scriptFile>
 								</configuration>
