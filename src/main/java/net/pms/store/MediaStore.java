@@ -630,6 +630,14 @@ public class MediaStore extends StoreContainer {
 		if (id == null) {
 			return null;
 		}
+		// <custom:deep-browse> The recreated tree starts below the root (id 0), so build the root first: after a
+		// restart a direct request (a client bookmark) comes before any root browse. Before the id lock (the root
+		// discovery takes id locks itself, the other order could deadlock); another thread building the root makes
+		// this one wait for it, the thread that is building it (it looks up resources by id) goes on.
+		if (getWeakResource(id) == null && !isDiscovered() && !Thread.holdsLock(this)) {
+			discoverChildren();
+		}
+		// </custom:deep-browse>
 		Object idLock = getIdLock(id);
 		synchronized (idLock) {
 			StoreResource res = getWeakResource(id);

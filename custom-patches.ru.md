@@ -39,6 +39,7 @@
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `virtual-folders` | Виртуальные папки (одно имя, несколько папок) внутри "Folders" и в сканировании медиатеки | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Изменение настройки перестраивает и общие папки, а не только корень | `MediaStore`, `Renderer` |
+| `deep-browse` | Прямой запрос папки по id (закладка клиента) работает сразу после перезапуска, без захода в корень | `MediaStore` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
@@ -488,6 +489,32 @@ settings"). Все настройки своих патчей с интерфе�
 ### Настройки в conf (`UMS.conf`)
 
 Своих ключей нет (виртуальные папки - в `SHARED.conf`).
+
+---
+
+## deep-browse
+
+### Суть работы
+
+Исправление ошибки upstream. Id папок постоянные (таблица `STORE_IDS` в базе), поэтому клиенты (например,
+закладки Movian `upnp:<uuid>:<сервис>:<id>`) открывают папку сразу по id. После перезапуска UMS дерево папок
+устройства в памяти пустое, и `MediaStore.recreateResource()` восстанавливает папку по цепочке родителей из базы.
+Цепочка начинается ниже корня (id 0), а корень строится только при открытии `0`: пока клиент не открыл корень,
+первая папка цепочки не находилась, и запрос возвращал "объект не найден".
+
+Патч: `getWeakResource(String)` сначала строит корень этого устройства, если его еще нет и id не найден, - до
+блокировки по id (построение корня само берет блокировки по id, обратный порядок мог бы зависнуть). Поток, который
+сейчас строит корень (`Thread.holdsLock(this)`: при построении `DbIdLibrary` сам ищет папки по id, например "Аудио"),
+корень повторно не строит - иначе бесконечная рекурсия (`StackOverflowError`); другие потоки ждут конца построения на
+мониторе `MediaStore` и дальше идут по готовому корню.
+
+### Настройки в UI
+
+Нет.
+
+### Настройки в conf (`UMS.conf`)
+
+Нет.
 
 ---
 
