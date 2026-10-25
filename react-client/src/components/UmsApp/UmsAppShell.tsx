@@ -133,6 +133,9 @@ export default function UmsAppShell({ i18n, session, player }: { i18n: I18nInter
                     size="sm"
                   />
                 )}
+              {/* <custom:logo> The fork's logo at the start of the header */}
+              <img src="/icon-256.png" alt="Universal Media Server" width={36} height={36} style={{ display: 'block', flexShrink: 0 }} />
+              {/* </custom:logo> */}
               <ModeButtons i18n={i18n} session={session} />
               <ColorSchemeButton i18n={i18n} />
               <LanguagesMenu i18n={i18n} />

@@ -31,6 +31,7 @@
 | Патч | Что делает | Файлы |
 |---|---|---|
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
+| `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
 | `build-scripts` | Скрипты сборки в `build/`, выходные файлы в `.gitignore`; коммит ветки как `git.commit.id` (с незакоммиченными изменениями - `<коммит>-dirty-<время>`, иначе браузер держит старые переводы); только установщик x86_64 (x86 выключен в `pom.xml`, экономит ~4 мин) | `build/*`, `.gitignore`, `pom.xml` |
@@ -120,6 +121,39 @@
 | Ключ | По умолчанию | Значение |
 |---|---|---|
 | `renderers_name` | `{}` | свои имена устройств по UUID (задаются из интерфейса) |
+
+---
+
+## logo
+
+### Суть работы
+
+Свой логотип (исходник - `E:\Soft\UniversalMediaServer\resource\Logo.png`, 427x395, прозрачный фон) вместо логотипа
+UMS. Все картинки сделаны из него (Pillow, ресайз LANCZOS, лого по центру квадрата):
+
+| Где виден | Файлы |
+|---|---|
+| Заголовок веб-интерфейса | `UmsAppShell.tsx`: `/icon-256.png` 36x36 в начале левой группы (после кнопки меню на узком экране), тег `custom:logo` |
+| Страница "О программе" (`/about`) | `About.tsx`: `/icon-256.png` 96x96 над названием программы, тег `custom:logo` |
+| Веб-интерфейс, вкладка браузера, iOS | `react-client/public/favicon.ico` (16, 32, 48), `icon-32.png`, `icon-256.png`, `apple-touch-icon.png` (180) |
+| Значок сервера на ТВ (DLNA) | `src/main/resources/images/icon-square-{48,120,128,256}.png` и `-{48,120,128}.jpg` - на темно-синем фоне `#0E162C` (непрозрачные) |
+| Окно и трей настольного UMS | `images/icon-{16..64,128}.png`, `icon.svg` (PNG внутри SVG, размер 32x32 - его проверяет штатный `SvgMultiResolutionImageTest`) |
+| "О программе", `README.md` | `images/logo.png` (256), `logo.ico`, `logo.svg` (PNG внутри SVG); ссылка в `README.md` - на `logo.png` этой ветки (теги `<!-- <custom:logo> -->`) |
+| `UMS.exe`, установщик, удаление программ | `src/main/external-resources/icon.ico` (16..256) |
+
+Не менялись: `logo.icns` (macOS), `icon-bw*` / `icon-darkmode*` (монохромные значки трея macOS / Linux),
+`splash/splash.png` (заставка настольного GUI, с текстом).
+
+Картинки - двоичные файлы, тегов в них нет. При слиянии с upstream конфликт в них решать в пользу своих
+(`git checkout --ours`); если upstream добавил новый размер значка - сделать его из `Logo.png` так же.
+
+### Настройки в UI
+
+Нет.
+
+### Настройки в conf (`UMS.conf`)
+
+Нет.
 
 ---
 

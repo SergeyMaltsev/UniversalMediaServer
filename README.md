@@ -6,7 +6,12 @@
 <!-- </custom:readme-custom> -->
 ![Universal Media Server CI](https://github.com/UniversalMediaServer/UniversalMediaServer/workflows/CI/badge.svg) [![Crowdin](https://badges.crowdin.net/universalmediaserver/localized.svg)](https://crowdin.com/project/universalmediaserver) [![Licence](https://img.shields.io/github/license/UniversalMediaServer/UniversalMediaServer.svg)](LICENSE.txt) [![Latest release](https://img.shields.io/github/v/release/UniversalMediaServer/UniversalMediaServer.svg)](https://github.com/UniversalMediaServer/UniversalMediaServer/releases/latest) [![Contributors](https://img.shields.io/github/contributors/UniversalMediaServer/UniversalMediaServer.svg)](https://github.com/UniversalMediaServer/UniversalMediaServer/graphs/contributors)
 
-[<img align="right" src="https://github.com/UniversalMediaServer/UniversalMediaServer/blob/main/src/main/resources/images/logo.png?raw=true" alt="Universal Media Server" width="256" height="auto"/>][1] 
+<!-- <custom-remove:logo> -->
+<!-- [<img align="right" src="https://github.com/UniversalMediaServer/UniversalMediaServer/blob/main/src/main/resources/images/logo.png?raw=true" alt="Universal Media Server" width="256" height="auto"/>][1] -->
+<!-- </custom-remove:logo> -->
+<!-- <custom:logo> The fork's own logo, from this branch -->
+[<img align="right" src="src/main/resources/images/logo.png" alt="Universal Media Server" width="256" height="auto"/>][1] 
+<!-- </custom:logo> -->
 Universal Media Server is a DLNA, UPnP and HTTP/S Media Server.
 It is capable of sharing video, audio and images between most modern devices.
 It was originally based on PS3 Media Server by shagrath, in order to ensure greater stability and file-compatibility.
