@@ -41,6 +41,7 @@ Summary:
 | `virtual-folders` | Virtual folders (one name, several folders) inside "Folders" and in media library scanning | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Changing a setting rebuilds the shared folders too, not only the root | `MediaStore`, `Renderer` |
 | `deep-browse` | A direct request for a folder by id (client bookmark) works right after a restart, without opening the root first | `MediaStore` |
+| `ruid-no-mmap` | The RUID of a file is computed with a normal read, not a memory mapping: new files do not stay locked by UMS until garbage collection | `ResourceIdentifier` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
@@ -486,6 +487,29 @@ the lock by id (building the root itself takes the locks by id, the reverse orde
 building the root right now (`Thread.holdsLock(this)`: when building `DbIdLibrary` itself looks up folders by id, for example "Audio")
 does not build the root again - otherwise infinite recursion (`StackOverflowError`); other threads wait for the end of the building on
 the `MediaStore` monitor and then go on with the ready root.
+
+### Settings in the UI
+
+None.
+
+### Settings in conf (`UMS.conf`)
+
+None.
+
+---
+
+## ruid-no-mmap
+
+### What it does
+
+Fix for an upstream bug. `ResourceIdentifier.getFileIdentifier()` (RUID - an XXH3 hash of the start and end of the file, computed at each parse)
+read the file through `FileChannel.map()`. A buffer mapped into memory keeps the file open until garbage collection,
+even after the channel is closed: a new or changed file in a shared folder stayed locked by the UMS process (for minutes). Windows does not
+allow moving it to the Recycle Bin in this time (error `0x7C` in `SHFileOperation`, "The specified
+path is invalid" in Explorer), renaming it or opening it exclusively; deletion to the Recycle Bin from the "Folder management" page and any programs
+touching a file that was just added suffered.
+
+The patch: the segments are read into an ordinary buffer (`readSegment`, `FileChannel.read`). The bytes are the same - the RUID does not change.
 
 ### Settings in the UI
 

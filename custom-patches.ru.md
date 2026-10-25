@@ -40,6 +40,7 @@
 | `virtual-folders` | Виртуальные папки (одно имя, несколько папок) внутри "Folders" и в сканировании медиатеки | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Изменение настройки перестраивает и общие папки, а не только корень | `MediaStore`, `Renderer` |
 | `deep-browse` | Прямой запрос папки по id (закладка клиента) работает сразу после перезапуска, без захода в корень | `MediaStore` |
+| `ruid-no-mmap` | RUID файла считается обычным чтением, а не отображением в память: свежие файлы не остаются занятыми UMS до сборки мусора | `ResourceIdentifier` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
@@ -507,6 +508,29 @@ settings"). Все настройки своих патчей с интерфе�
 сейчас строит корень (`Thread.holdsLock(this)`: при построении `DbIdLibrary` сам ищет папки по id, например "Аудио"),
 корень повторно не строит - иначе бесконечная рекурсия (`StackOverflowError`); другие потоки ждут конца построения на
 мониторе `MediaStore` и дальше идут по готовому корню.
+
+### Настройки в UI
+
+Нет.
+
+### Настройки в conf (`UMS.conf`)
+
+Нет.
+
+---
+
+## ruid-no-mmap
+
+### Суть работы
+
+Исправление ошибки upstream. `ResourceIdentifier.getFileIdentifier()` (RUID - хэш XXH3 начала и конца файла при
+каждом разборе) читал файл через `FileChannel.map()`. Отображенный в память буфер держит файл открытым до сборки
+мусора, даже после закрытия канала: новый или измененный файл в общей папке оставался занятым процессом UMS
+(минуты). Windows в это время не дает перенести его в корзину (ошибка `0x7C` у `SHFileOperation`, "The specified
+path is invalid" у Проводника), переименовать или открыть монопольно; страдали удаление в корзину со страницы
+"Folder management" и любые программы, трогающие только что добавленный файл.
+
+Патч: сегменты читаются в обычный буфер (`readSegment`, `FileChannel.read`). Байты те же - RUID не меняется.
 
 ### Настройки в UI
 
