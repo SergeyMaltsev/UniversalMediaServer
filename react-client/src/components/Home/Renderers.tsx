@@ -17,9 +17,18 @@
 import { ActionIcon, Button, Card, Drawer, Grid, Group, Image, Menu, Modal, Progress, ScrollArea, Select, Slider, Stack, Table, Text } from '@mantine/core'
 import axios, { AxiosResponse } from 'axios'
 import { useEffect, useState } from 'react'
-import { IconCast, IconDevicesPc, IconDevicesPcOff, IconDots, IconLink, IconListDetails, IconPlayerPause, IconPlayerPlay, IconPlayerSkipBack, IconPlayerSkipForward, IconPlayerStop, IconPlayerTrackNext, IconPlayerTrackPrev, IconScreenShare, IconSettings, IconVolume, IconVolumeOff } from '@tabler/icons-react'
+// <custom-remove:common>
+// import { IconCast, IconDevicesPc, IconDevicesPcOff, IconDots, IconLink, IconListDetails, IconPlayerPause, IconPlayerPlay, IconPlayerSkipBack, IconPlayerSkipForward, IconPlayerStop, IconPlayerTrackNext, IconPlayerTrackPrev, IconScreenShare, IconSettings, IconVolume, IconVolumeOff } from '@tabler/icons-react'
+// </custom-remove:common>
+// <custom:common> IconPencil for "Rename", filled play / pause for the playback icon
+import { IconCast, IconDevicesPc, IconDevicesPcOff, IconDots, IconLink, IconListDetails, IconPencil, IconPlayerPause, IconPlayerPauseFilled, IconPlayerPlay, IconPlayerPlayFilled, IconPlayerSkipBack, IconPlayerSkipForward, IconPlayerStop, IconPlayerTrackNext, IconPlayerTrackPrev, IconScreenShare, IconSettings, IconVolume, IconVolumeOff } from '@tabler/icons-react'
+// </custom:common>
 
 import MediaChooser from './MediaChooser'
+// <custom:common> Rename a renderer, copy IP / MAC
+import CopyValueButton from './CopyValueButton'
+import RendererRenameModal from './RendererRenameModal'
+// </custom:common>
 import { Media, Renderer, User } from '../../services/home-service'
 import { I18nInterface } from '../../services/i18n-service'
 import { renderersApiUrl } from '../../utils'
@@ -44,6 +53,9 @@ const Renderers = (
   const [controlMedia, setControlMedia] = useState<Media | null>(null)
   const [userChanger, setUserChanger] = useState<Renderer | null>()
   const [userChangerValue, setUserChangerValue] = useState<string | null>(null)
+  // <custom:common> Renderer being renamed
+  const [renamed, setRenamed] = useState<Renderer | null>(null)
+  // </custom:common>
 
   useEffect(() => {
     if (askInfos < 0) {
@@ -153,11 +165,27 @@ const Renderers = (
   }
 
   const renderersCards = renderers && renderers.map((renderer: Renderer) => allowed == renderer.isAllowed && (
-    <Grid.Col span={{ base: 12, xs: 6 }} key={renderer.id}>
+    // <custom-remove:common>
+    // <Grid.Col span={{ base: 12, xs: 6 }} key={renderer.id}>
+    // </custom-remove:common>
+    // <custom:common> Three cards in a row on wide screens
+    <Grid.Col span={{ base: 12, xs: 6, md: 4 }} key={renderer.id}>
+      {/* </custom:common> */}
       <Card shadow="sm" p="lg" radius="md" withBorder>
         <Card.Section withBorder inheritPadding py="xs">
           <Group justify="space-between">
-            <Text fw={500} c={getNameColor(renderer)}>{renderer.name == 'UnknownRenderer' ? i18n.get('UnknownRenderer') : renderer.name}</Text>
+            {/* <custom-remove:common> */}
+            {/* <Text fw={500} c={getNameColor(renderer)}>{renderer.name == 'UnknownRenderer' ? i18n.get('UnknownRenderer') : renderer.name}</Text> */}
+            {/* </custom-remove:common> */}
+            {/* <custom:common> "*" after a renamed renderer's name, playback icon */}
+            <Group gap={6} wrap="nowrap" miw={0}>
+              {renderer.state.playback === 1 && <IconPlayerPlayFilled size={16} color="var(--mantine-color-green-6)" style={{ flexShrink: 0 }} />}
+              {renderer.state.playback === 2 && <IconPlayerPauseFilled size={16} color="var(--mantine-color-dimmed)" style={{ flexShrink: 0 }} />}
+              <Text fw={500} c={getNameColor(renderer)} truncate title={renderer.isRenamed ? renderer.deviceName : undefined}>
+                {(renderer.name == 'UnknownRenderer' ? i18n.get('UnknownRenderer') : renderer.name) + (renderer.isRenamed ? ' *' : '')}
+              </Text>
+            </Group>
+            {/* </custom:common> */}
             <Menu withinPortal position="bottom-end" shadow="sm">
               <Menu.Target>
                 <ActionIcon>
@@ -168,6 +196,11 @@ const Renderers = (
                 <Menu.Item leftSection={<IconListDetails size={14} />} onClick={() => setAskInfos(renderer.id)}>{i18n.get('Info')}</Menu.Item>
                 {canModify && (
                   <>
+                    {/* <custom:common> Rename a renderer */}
+                    {renderer.uuid && (
+                      <Menu.Item leftSection={<IconPencil size={14} />} onClick={() => setRenamed(renderer)}>{i18n.get('RenameRenderer')}</Menu.Item>
+                    )}
+                    {/* </custom:common> */}
                     <Menu.Item leftSection={<IconSettings size={14} />} color="red" disabled={true /* not implemented yet */}>{i18n.get('Settings')}</Menu.Item>
                     {!renderer.isAuthenticated && renderer.uuid && (
                       <Menu.Item
@@ -192,21 +225,37 @@ const Renderers = (
             </Menu>
           </Group>
         </Card.Section>
-        <Card.Section>
+        {/* <custom-remove:common> */}
+        {/* <Card.Section> */}
+        {/* </custom-remove:common> */}
+        {/* <custom:common> More room above and below the device picture */}
+        <Card.Section py="lg">
+          {/* </custom:common> */}
           <Image
             src={renderersApiUrl + 'icon/' + renderer.id + '/' + renderer.icon}
-            height={160}
+            // <custom-remove:common>
+            // height={160}
+            // </custom-remove:common>
+            // <custom:common> 30% smaller pictures (compact cards)
+            height={112}
+            // </custom:common>
             fit="contain"
             style={!renderer.isActive ? { filter: 'grayscale(95%)' } : undefined}
             alt={renderer.name}
           />
         </Card.Section>
-        {renderer.address
-          && (
-            <Text ta="center" size="sm" c="dimmed">
-              {renderer.address}
-            </Text>
-          )}
+        {/* <custom-remove:common> */}
+        {/* {renderer.address */}
+        {/*   && ( */}
+        {/*     <Text ta="center" size="sm" c="dimmed"> */}
+        {/*       {renderer.address} */}
+        {/*     </Text> */}
+        {/*   )} */}
+        {/* </custom-remove:common> */}
+        {/* <custom:common> "IP:" and "MAC:" lines with copy icons */}
+        {renderer.address && <CopyValueButton i18n={i18n} label="IP" value={renderer.address} />}
+        {renderer.macAddress && <CopyValueButton i18n={i18n} label="MAC" value={renderer.macAddress} mb="sm" />}
+        {/* </custom:common> */}
         {renderer.playing
           && <Progress value={renderer.progressPercent} />}
         {renderer.playing
@@ -325,6 +374,9 @@ const Renderers = (
     <>
       {rendererDetail}
       {rendererUserChanger}
+      {/* <custom:common> Rename a renderer */}
+      <RendererRenameModal i18n={i18n} renderer={renamed} onClose={() => setRenamed(null)} />
+      {/* </custom:common> */}
       {rendererControls}
       {renderersHeader}
       <Grid>

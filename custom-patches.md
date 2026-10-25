@@ -31,6 +31,7 @@ Summary:
 
 | Patch | What it does | Files |
 |---|---|---|
+| `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
 | `build-scripts` | Build scripts in `build/`, output files in `.gitignore`; the branch commit as `git.commit.id` (with uncommitted changes - `<commit>-dirty-<time>`, otherwise the browser keeps old translations); only the x86_64 installer (x86 is disabled in `pom.xml`, saves ~4 min) | `build/*`, `.gitignore`, `pom.xml` |
@@ -66,6 +67,55 @@ Server UUID section (patch `server-uuid`):
 ```
 <current UUID>  [New server UUID]           -> uuid (new random) + restart of the media server
 ```
+
+---
+
+## common
+
+General web UI improvements not tied to plugins.
+
+### What it does
+
+- Draggable edge of the left panel (settings and player navigation), `NavbarSplitter`: a thin strip on the inner
+  edge of the panel, the cursor "resize". Width 100..500 px (as for the "Navbar width" sliders on the
+  Customize page). Stored in the same standard browser keys `mantine-navbar-width-sm/md/lg` - separately for the small,
+  medium and large screen (the width of the current one changes); the Customize sliders show the same value.
+- On a narrow screen (less than `sm`, the panel slides out by a button) there is no edge. For right-to-left writing the edge is on the left.
+- Red icon button for restarting the server at the right edge of the header, after the user menu
+  (`RestartServerButton`, tooltip "Restart server"): the same `Server.Restart` action and the same confirmation window as the button on the
+  "Tools" page (restart of the media services, not of the application). Visible with the "restart server" right, not in player mode.
+- Copy icon buttons after the IP and MAC in the card (`CopyValueButton`, the standard `CopyButton`); after copying,
+  a check mark is shown for a second. Copying to the clipboard requires a secure context: it works on `http://localhost`; when the UI is opened by IP on the network, the browser may not allow it.
+- The menu item "Manage accounts" has a shorter Russian translation (`ManageAccounts` in
+  `messages_ru.properties`; the English does not change).
+- Renaming a device (Home -> card -> "..." menu -> "Rename"): the own name
+  is shown instead of the name the device reports (UPnP `friendlyName`, for example two "movian" devices). `RendererNames` stores names by UUID in `UMS.conf` (`renderers_name`, like the standard `renderers_user`: JSON with `"`
+  written as `|`, so `"` and `|` are removed from the name). `Renderer.getRendererName()` returns the own name first -
+  it is visible everywhere (cards, logs, player). A renamed device shows `*` after the name in the card; the tooltip on hover shows the device name. An empty name or the "Device name" button returns the device name.
+- MAC address in the card under the IP (`MacAddresses`): from the system ARP table (`arp -a <ip>`, on Linux/macOS with `-n`),
+  cached by IP. The lookup does not delay the card update: `arp` runs in the background (one per IP, no longer than 5 s, a failed
+  attempt is repeated at most once a minute), and the found MAC updates the card itself. Empty for this computer and
+  for switched-off devices.
+- The bottom status line is always visible: the earlier messages on the left, on the right "Universal Media Server <version> custom
+  edition - <build date and time>". The build time is local, `build\build.ps1` passes `-Dbuild.time`, in
+  `project.properties` it is `project.build.time`, the "About" API returns `buildTime` (empty for a build without build.ps1).
+- Status helpers for our patches (`MediaStatusStore`): `isStatusStored(path)` - whether UMS stores the status of the file
+  (a folder with "monitored"); `clearPlayback(path, user)` - clears "played" and resets the stop point without
+  increasing the play counter, in one request (`MediaTableFilesStatus.clearPlayback`); `false` if there is nothing to clear
+  (no label or a folder without "monitored").
+- `Renderer.hasMediaStore()` - whether the device has a media library, without creating it.
+- Device cards (Home): an icon before the name - a green "play" during playback, a grey "pause" on
+  pause (`state.playback` 1 / 2); 3 cards per row on a wide screen (2 on a medium one, 1 on a narrow one); the device picture is 30% smaller (112 px) with margins at the top and bottom; IP and MAC in the same font size.
+
+### Settings in the UI
+
+None (the panel width - by dragging or with the Customize -> Navbar width sliders; the name - in the device card menu).
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Value |
+|---|---|---|
+| `renderers_name` | `{}` | own device names by UUID (set from the UI) |
 
 ---
 

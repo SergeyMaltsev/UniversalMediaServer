@@ -28,6 +28,10 @@ import net.pms.PMS;
 import net.pms.configuration.UmsConfiguration;
 import net.pms.gui.IRendererGuiListener;
 import net.pms.renderers.Renderer;
+// <custom:common> Own renderer name, MAC address
+import net.pms.network.MacAddresses;
+import net.pms.renderers.RendererNames;
+// </custom:common>
 import net.pms.renderers.RendererUser;
 import net.pms.renderers.devices.players.PlayerState;
 import net.pms.store.StoreItem;
@@ -50,6 +54,11 @@ public class RendererItem implements IRendererGuiListener {
 	private final Renderer renderer;
 
 	private String name;
+	// <custom:common> Own renderer name: the device's own name and whether it is renamed
+	private String deviceName;
+	private boolean isRenamed;
+	private String macAddress;
+	// </custom:common>
 	private String address;
 	private String uuid;
 	private String icon;
@@ -193,6 +202,12 @@ public class RendererItem implements IRendererGuiListener {
 		name = renderer.getRendererName();
 		address = (renderer.getAddress() != null) ? renderer.getAddress().getHostAddress() : "";
 		uuid = (renderer.getUUID() != null) ? renderer.getUUID() : "";
+		// <custom:common> Own renderer name
+		deviceName = renderer.getDeviceName();
+		isRenamed = RendererNames.getName(uuid) != null;
+		// Cached or "" at once; a background lookup updates the card when it finds the address
+		macAddress = MacAddresses.getMacAddress(renderer.getAddress(), renderer::updateRendererGui);
+		// </custom:common>
 		icon = renderer.getRendererIcon();
 		iconOverlays = renderer.getRendererIconOverlays();
 		isActive = renderer.isActive();
@@ -250,6 +265,11 @@ public class RendererItem implements IRendererGuiListener {
 		JsonObject result = new JsonObject();
 		result.addProperty("id", id);
 		result.addProperty("name", name);
+		// <custom:common> Own renderer name
+		result.addProperty("deviceName", deviceName);
+		result.addProperty("isRenamed", isRenamed);
+		result.addProperty("macAddress", macAddress);
+		// </custom:common>
 		result.addProperty("address", address);
 		result.addProperty("uuid", uuid);
 		result.addProperty("icon", icon);

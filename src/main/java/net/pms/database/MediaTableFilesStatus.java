@@ -370,6 +370,31 @@ public final class MediaTableFilesStatus extends MediaTable {
 		}
 	}
 
+	// <custom:common> Clear the played status and the stopped position without counting a playback
+	/**
+	 * Clears "fully played" and sets the stopped position of an existing record
+	 * to 0; the play count and the last played date stay (unlike
+	 * {@link #setLastPlayed}). Nothing is done when the file has no record.
+	 */
+	public static void clearPlayback(final Connection connection, final String fullPathToFile, final int userId) {
+		try (PreparedStatement statement = connection.prepareStatement(SQL_GET_ALL, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+			statement.setString(1, fullPathToFile);
+			statement.setInt(2, userId);
+			try (ResultSet result = statement.executeQuery()) {
+				if (result.next()) {
+					result.updateTimestamp(COL_MODIFIED, new Timestamp(System.currentTimeMillis()));
+					result.updateBoolean(COL_ISFULLYPLAYED, false);
+					result.updateDouble(COL_LASTPLAYBACKPOSITION, 0);
+					result.updateRow();
+				}
+			}
+		} catch (SQLException e) {
+			LOGGER.error(LOG_ERROR_WHILE_IN_FOR, DATABASE_NAME, "clearing the playback position", TABLE_NAME, fullPathToFile, e.getMessage());
+			LOGGER.trace("", e);
+		}
+	}
+	// </custom:common>
+
 	public static void setBookmark(final Connection connection, final String fullPathToFile, final int userId, final int bookmark) {
 		boolean trace = LOGGER.isTraceEnabled();
 		try {

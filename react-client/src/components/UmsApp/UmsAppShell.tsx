@@ -14,8 +14,14 @@
  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-import { AppShell, Box, Burger, Center, Group, Loader, useDirection } from '@mantine/core'
-import { useLocalStorage } from '@mantine/hooks'
+// <custom-remove:common>
+// import { AppShell, Box, Burger, Center, Group, Loader, useDirection } from '@mantine/core'
+// import { useLocalStorage } from '@mantine/hooks'
+// </custom-remove:common>
+// <custom:common> Theme breakpoints and media queries for the draggable navbar edge
+import { AppShell, Box, Burger, Center, Group, Loader, useDirection, useMantineTheme } from '@mantine/core'
+import { useLocalStorage, useMediaQuery } from '@mantine/hooks'
+// </custom:common>
 import { IconServer, IconServerOff } from '@tabler/icons-react'
 import { Route, Routes, Navigate } from 'react-router'
 
@@ -32,7 +38,13 @@ import LanguagesMenu from '../UmsApp/LanguagesMenu'
 import Login from '../Login/Login'
 import Logs from '../Logs/Logs'
 import ModeButtons from './ModeButtons'
+// <custom:common> Draggable navbar edge
+import NavbarSplitter from './NavbarSplitter'
+// </custom:common>
 import Player from '../Player/Player'
+// <custom:common> Red "Restart server" button in the header
+import RestartServerButton from './RestartServerButton'
+// </custom:common>
 import ServerSettings from '../ServerSettings/ServerSettings'
 import SessionNavbar from './SessionNavbar'
 import SharedContent from '../SharedContent/SharedContent'
@@ -43,18 +55,42 @@ import KnowledgeBaseButton from './KnowledgeBaseButton'
 
 export default function UmsAppShell({ i18n, session, player }: { i18n: I18nInterface, session: SessionInterface, player: PlayerInterface }) {
   const { dir } = useDirection()
-  const [navbarWidthSmall] = useLocalStorage<number>({
+  // <custom-remove:common>
+  // const [navbarWidthSmall] = useLocalStorage<number>({
+  //   key: 'mantine-navbar-width-sm',
+  //   defaultValue: 250,
+  // })
+  // const [navbarWidthMedium] = useLocalStorage<number>({
+  //   key: 'mantine-navbar-width-md',
+  //   defaultValue: 300,
+  // })
+  // const [navbarWidthLarge] = useLocalStorage<number>({
+  //   key: 'mantine-navbar-width-lg',
+  //   defaultValue: 400,
+  // })
+  // </custom-remove:common>
+  // <custom:common> Navbar width setters for the draggable navbar edge (NavbarSplitter)
+  const [navbarWidthSmall, setNavbarWidthSmall] = useLocalStorage<number>({
     key: 'mantine-navbar-width-sm',
     defaultValue: 250,
   })
-  const [navbarWidthMedium] = useLocalStorage<number>({
+  const [navbarWidthMedium, setNavbarWidthMedium] = useLocalStorage<number>({
     key: 'mantine-navbar-width-md',
     defaultValue: 300,
   })
-  const [navbarWidthLarge] = useLocalStorage<number>({
+  const [navbarWidthLarge, setNavbarWidthLarge] = useLocalStorage<number>({
     key: 'mantine-navbar-width-lg',
     defaultValue: 400,
   })
+  // The width of the current viewport (AppShell breakpoints sm / md / lg); no edge below sm (mobile navbar)
+  const theme = useMantineTheme()
+  const isLarge = useMediaQuery(`(min-width: ${theme.breakpoints.lg})`)
+  const isMedium = useMediaQuery(`(min-width: ${theme.breakpoints.md})`)
+  const isSmall = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`)
+  const [navbarWidth, setNavbarWidth] = isLarge
+    ? [navbarWidthLarge, setNavbarWidthLarge]
+    : isMedium ? [navbarWidthMedium, setNavbarWidthMedium] : [navbarWidthSmall, setNavbarWidthSmall]
+  // </custom:common>
   return (
     <div dir={dir} className="bodyBackgroundImageScreen">
       <WebSocketClient i18n={i18n} session={session} player={player} />
@@ -68,10 +104,20 @@ export default function UmsAppShell({ i18n, session, player }: { i18n: I18nInter
             }
           : undefined}
         header={{ height: 60 }}
-        footer={session.statusLine ? { height: 30 } : undefined}
+        // <custom-remove:common>
+        // footer={session.statusLine ? { height: 30 } : undefined}
+        // </custom-remove:common>
+        // <custom:common> The status bar is always shown: it holds the version and build time
+        footer={{ height: 30 }}
+        // </custom:common>
         bg="transparentBg"
       >
         <SessionNavbar i18n={i18n} session={session} />
+        {/* <custom:common> Draggable navbar edge, the width is stored per viewport size */}
+        {session.hasNavbar && isSmall && (
+          <NavbarSplitter width={navbarWidth} rtl={dir === 'rtl'} onChange={setNavbarWidth} />
+        )}
+        {/* </custom:common> */}
         <AppShell.Header
           p="xs"
           bg="transparentBg"
@@ -94,6 +140,9 @@ export default function UmsAppShell({ i18n, session, player }: { i18n: I18nInter
             </Group>
             <Group justify="flex-end">
               <UserMenu i18n={i18n} session={session}></UserMenu>
+              {/* <custom:common> Red "Restart server" icon at the right edge of the header */}
+              <RestartServerButton i18n={i18n} session={session} />
+              {/* </custom:common> */}
             </Group>
           </Group>
         </AppShell.Header>

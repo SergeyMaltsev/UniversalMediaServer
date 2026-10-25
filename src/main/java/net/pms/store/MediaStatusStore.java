@@ -149,6 +149,55 @@ public class MediaStatusStore {
 		}
 	}
 
+	// <custom:common> Status helpers of the custom patches (labels reset, folder management)
+	/**
+	 * @return whether the playback status of the file is stored: false inside a
+	 * shared folder without "monitored" (the same rule as
+	 * {@link #setFullyPlayed}, which writes nothing there).
+	 */
+	public static boolean isStatusStored(String filename) {
+		for (SharedContent sc : SharedContentConfiguration.getSharedContentArray()) {
+			if (sc instanceof FolderContent folder && folder.getFile() != null &&
+					filename.startsWith(folder.getFile().getAbsolutePath()) && !folder.isMonitored()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Clears the played status and the stopped position (the "[*]" and
+	 * "[h:mm:ss]" labels) without counting a playback, unlike
+	 * {@code setFullyPlayed(filename, userId, false, 0.0)}.
+	 *
+	 * @return false if nothing was cleared: the status of the file is not
+	 * stored (not monitored), or it has no label
+	 */
+	public static boolean clearPlayback(String filename, int userId) {
+		if (!isStatusStored(filename)) {
+			return false;
+		}
+		MediaStatus mediaStatus = getMediaStatus(userId, filename);
+		Double position = mediaStatus.getLastPlaybackPosition();
+		if (!mediaStatus.isFullyPlayed() && (position == null || position <= 0)) {
+			return false;
+		}
+		mediaStatus.setFullyPlayed(false);
+		mediaStatus.setLastPlaybackPosition(0.0);
+		Connection connection = null;
+		try {
+			connection = MediaDatabase.getConnectionIfAvailable();
+			if (connection != null) {
+				MediaTableFilesStatus.clearPlayback(connection, filename, userId);
+			}
+			MediaStoreIds.incrementUpdateIdForFilename(connection, filename);
+		} finally {
+			MediaDatabase.close(connection);
+		}
+		return true;
+	}
+	// </custom:common>
+
 	public static void setBookmark(final String filename, final int userId, final int bookmark) {
 		//update store
 		MediaStatus mediaStatus = getMediaStatus(userId, filename);
