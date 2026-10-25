@@ -15,7 +15,12 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 import { Button } from '@mantine/core'
-import { IconDeviceDesktopCog, IconHome, IconInfoCircle, IconSettings, IconShare, IconTool, IconUser, IconUsers } from '@tabler/icons-react'
+// <custom-remove:folders-root>
+// import { IconDeviceDesktopCog, IconHome, IconInfoCircle, IconSettings, IconShare, IconTool, IconUser, IconUsers } from '@tabler/icons-react'
+// </custom-remove:folders-root>
+// <custom:folders-root> IconFolders for the "Folder management" page
+import { IconDeviceDesktopCog, IconFolders, IconHome, IconInfoCircle, IconSettings, IconShare, IconTool, IconUser, IconUsers } from '@tabler/icons-react'
+// </custom:folders-root>
 import { useNavigate } from 'react-router'
 
 import { I18nInterface } from '../../services/i18n-service'
@@ -24,6 +29,9 @@ import About from '../About/About'
 import Actions from '../Actions/Actions'
 import Accounts from '../Accounts/Accounts'
 import BrowserSettings from '../BrowserSettings/BrowserSettings'
+// <custom:folders-root> "Folder management" page
+import FolderManager from '../FolderManager/FolderManager'
+// </custom:folders-root>
 import Home from '../Home/Home'
 import Logs from '../Logs/Logs'
 import ServerSettings from '../ServerSettings/ServerSettings'
@@ -62,6 +70,22 @@ export default function ManageNavbar({ i18n, session, from }: { i18n: I18nInterf
           {i18n.get('SharedContent')}
         </Button>
       )}
+      {/* <custom:folders-root> "Folder management" page */}
+      {!session.player && session.havePermission(UmsPermission.settings_view) && (
+        <Button
+          color="gray"
+          variant={from === FolderManager.name ? undefined : 'subtle'}
+          size="compact-md"
+          leftSection={<IconFolders size={14} />}
+          onClick={() => {
+            navigate('/folders')
+            session.setNavbarOpened(false)
+          }}
+        >
+          {i18n.get('FolderManagement')}
+        </Button>
+      )}
+      {/* </custom:folders-root> */}
       {!session.player && session.havePermission((UmsPermission.server_restart | UmsPermission.computer_shutdown) | UmsPermission.settings_modify) && (
         <Button
           color="gray"

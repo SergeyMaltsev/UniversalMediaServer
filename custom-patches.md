@@ -31,6 +31,7 @@ Summary:
 
 | Patch | What it does | Files |
 |---|---|---|
+| `folders-root` | "Folders" folder (own name) in the root instead of the shared folders; "Folder management" web UI page | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (new), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (new), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -69,6 +70,139 @@ Server UUID section (patch `server-uuid`):
 ```
 <current UUID>  [New server UUID]           -> uuid (new random) + restart of the media server
 ```
+
+---
+
+## folders-root
+
+### What it does
+
+- Root of the server when `show_folders_container = true`:
+  ```
+  Media Library      (if show_media_library_folder = true)
+  <Folders>          -> shared folders from Shared Content (F:\Video\...)
+  ```
+- "Folders" (`FoldersContainer`) collects all shared folders (`FolderContent`) instead of the root, including with
+  `flatten_folders`; virtual folders and iTunes/iPhoto stay in the root. When the root is rebuilt, the found folders
+  are moved without being recreated, and their ids are kept.
+- Name: `folders_container_name` or, if empty, "Folders" (localized by the UI language). The internal (system) name is always
+  `Folders`, so renaming does not change file ids and client addresses.
+- The keys are in `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS`: changing them rebuilds the root for the devices.
+- Turning "Folders" on once gives files new object ids (key "parent + name"): clients that store marks by address lose them once.
+
+### Folder management (web UI)
+
+The "Folder management" menu item (address `/folders`) after "Shared Content", for the right to view
+settings; changes require the right to change settings. Three panels:
+
+```
++----------------------+----------------------------------------------------------+---------------------------+
+| Series     [m]12 [e]5| [ ] Name                         Dur.    Codec    Size   | Mark played               |
+|  Detective [m]9  [e]3| [x] [*] Balthazar.S01E06.mkv     59:32   H264     1.2 GB | Mark all played           |
+|   Balthazar [m]9 [e]3| [ ] [30:43] Balthazar.S01E05...  58:10   H264     1.1 GB | Mark unplayed             |
+| TV         [m]40 [e]0|                                       Selected 1 of 9    | Mark all unplayed         |
+| -------------------- |                                                          | ------------------------- |
+| [x] Show counts      |                                                          | Delete played from disk   |
+| [x] Show played      |                                                          | Delete selected from disk |
++----------------------+----------------------------------------------------------+---------------------------+
+```
+
+- On the left - a tree of subfolders of the active Shared Content folders (hidden, `.` folders and `ignored_folder_names` are not
+  shown). To the right of the folder name - columns (all with subfolders, `nodeProps` of the tree): played (in the color
+  of the selected folder; 0 - empty), number of audio/video files, their size. Above the tree there is a header of the columns - icons only
+  (eye, film, disk) with tooltips. Under the tree there are checkboxes "Show played", "Show counts", "Show size". After actions the tree is refreshed.
+- Between the tree and the list there is a splitter (`PanelSplitter`): tree width 200..700 px; a second splitter - between
+  the list and the button panel, panel width 120..400 px. Button labels wrap by words, longer than 4 lines
+  are cut with "..."; the full text is in a tooltip. On a narrow
+  screen (< 62em) the panels go one under another.
+- Remembered in the browser (`localStorage`): checkboxes, tree and button panel widths, the last opened folder. When the page opens
+  this folder is selected and the branches leading to it are expanded; if it no longer exists - the nearest existing folder above.
+- Under the page title, across the full width above the panels - a filter by file name (all words, case-insensitive;
+  the cross clears it). It is kept when moving to another folder and is not remembered in the browser. The list, the status line
+  and the actions see only the matching files: "Mark all played", "Delete played from disk" and the selection do not touch
+  files hidden by the filter. If all are hidden - "No files match the filter".
+  The tree is filtered too (300 ms after typing, `GET tree?filter=...`, the same rule on the server): only folders
+  with matching files (in the folder itself or below) remain, their counters (files, played, size)
+  count only the matching files; all branches are expanded. After the filter is cleared the previous expansion comes back.
+  While the filter is active, there is no "Delete folder from disk" button: the tree counters show only the matching files,
+  but the whole folder is deleted.
+- In the center - the audio and video files of the selected folder (without subfolders): name with a label, duration, codec (video; for audio files - audio), video size (`1920x1080`), file size; duration, codec and video size come from the database,
+  for files not yet scanned they are empty. The "Name" header is text, the column takes the rest of the width; the headers of the
+  other columns are icons (clock, film, frame, disk) with tooltips, as above the tree; the width of these columns depends on
+  the content. Sorting - click on a column header, a repeated click changes the direction (names are sorted "naturally": 2 before 10; video size - by the number of pixels). Under the list there is a status line
+  (`FolderStatusBar`): selected, played, total - the number of files and their total size, with icons. On the right -
+  actions, a panel 250 px wide.
+- Names - with a label by the same settings as for devices (`FullyPlayed.addPlaybackLabel`: position, thresholds,
+  label switches); played files (`[*]`) are dimmed. The checkbox in the header selects all / clears the selection.
+- "Mark unplayed" clears both "played" and the stop point (the `[h:mm:ss]` label goes too), without
+  increasing the play counter (`MediaStatusStore.clearPlayback`, see `common`). Files in shared folders without
+  "monitored" are not marked (UMS does not store status there) - a warning with their number is shown.
+- Deletion - a warning window with the list of files; files are deleted from the disk permanently (`Files.delete`), not to the
+  Recycle Bin, and are removed from the media library at once in the same way as the standard folder watching
+  (`MediaInfoStore.removeMediaEntry`: the file and its status in the database and caches; `fileRemoved` for the already created device
+  media libraries; SystemUpdateID). A file that is no longer on the disk is only removed from the media library. Message: how many
+  files were deleted and how much space was freed.
+- Virtual folders of Shared Content (type "Virtual folders": one name, several folders) - a tree node with its own
+  name and a "folder" icon (value `virtual:Name`, nested - `virtual:Name/Inner`). Checkbox under the tree
+  "Merge virtual folders" (`localStorage`, enabled by default):
+  ```
+  enabled                                   disabled
+  Series              <- F:\ and E:\ together   Series
+    Balthazar  (F:)                           F:\Video\Series
+    Detective  (E:)                             Balthazar
+                                              E:\Video\Series
+                                                Detective
+  ```
+  Enabled - as for devices (the standard `VirtualFolder`): files and subfolders of all its folders together, by name;
+  same-named subfolders of different disks are two nodes. Disabled - each folder is a separate node inside, labeled with its full
+  path. Selecting a virtual folder node shows the top-level files of all its folders; the list header shows the name.
+  Folders of virtual folders count as shared for path checks (marks, deletion). The node of a shared folder that is a disk root is
+  labeled with its path (`E:\`); before it was empty.
+- At the bottom of the action panel, under file deletion, there is a red "Delete folder from disk" button
+  : it deletes the open folder with all its content (subfolders, any files, not only audio/video) after confirmation
+  (path, warning, number and size of the audio/video files from the tree). Available only for a real folder below a
+  shared folder: not for a shared folder (the root of the tree, a folder directly in a virtual folder node) and not for a virtual folder;
+  the server also refuses (with the reason in the response, `reason`) if another shared folder lies inside (comparison by real
+  paths `toRealPath`; both disabled shared folders and the folders of virtual folders are taken into account), or if there is a link on the path
+  from the shared folder to the target (each link is checked without following it; the same for file deletion). The nodes of the shared
+  folders themselves are marked by the tree with `nodeProps.shared`. A symlink and a junction inside
+  are deleted as links, the content of their target is not touched (the sign is attributes without following the link: `isSymbolicLink`
+  or `isOther`; the canonical path of a junction is not resolved). Deleted audio/video files leave the media library as for file deletion, the folder
+  node leaves the device trees (`MediaStore.fileRemoved`). Files that could not be deleted remain (with their
+  folders), their names are in the error message. After deletion the parent folder is opened.
+- API: `FolderManagerApiServlet`, `/v1/api/folders/` - `GET tree[?merge=false][&filter=words]`, `POST files {path}`,
+  `POST mark {paths, played}` -> `{count, skipped}`, `POST delete {paths}` -> `{deleted, freed, failed}`, `POST delete-folder {path}` -> `{deleted, freed, failed, removed}`. Each
+  path is checked by its canonical path (`..`, junction, symlink do not lead out of a shared folder; a shared folder can be
+  a disk root): only inside an active shared folder, only audio/video. After that the original path is used - the status
+  is stored by it, and the devices use it too. The tree does not loop through a junction to a folder above (a folder that is already above
+  on this path - by its real path, the junction is resolved - is shown without content); one folder in two
+  places (shared and inside a virtual folder) is shown in full in both. Status is for the user of the account (without authentication - 0, as for
+  devices).
+
+### Settings in the UI
+
+Custom Settings -> Root folders:
+- "Show the "Folders" folder" with a tooltip;
+- right after it "Name of the "Folders" folder (empty = default)", active only when the checkbox is on;
+- "Allow disk operations on the "Folder management" page", off by default: without it the page has no delete buttons (for files and folders), and the server answers
+  403 to `delete` / `delete-folder`;
+- "Use the Windows Recycle Bin when deleting", on by default, active only when disk operations are allowed: files and the folder go to the Recycle Bin (own `SHFileOperationW` call with the UTF-16 path: `FileUtils.moveToTrash` from jna-platform garbles non-ASCII paths;
+  a folder is moved as a whole in one operation, links inside stay links); the confirmation and result texts mention the Recycle Bin.
+  Before a folder is moved, UMS stops watching it and its subfolders (`FileWatcher.unwatch`): open watch handles prevent Windows from moving the folder (error `0x7C`); if the move fails, watching is restored
+  (`FileWatcher.rewatch`) and nothing is deleted.
+  Windows silently deletes permanently what it cannot put into the Recycle Bin, so before the move the server refuses:
+  a non-local non-removable drive or UNC (`NotFixedDrive`), the Recycle Bin of the drive is turned off (`RecycleBinOff`, `NukeOnDelete`),
+  the size is larger than the Recycle Bin size (`TooLargeForRecycleBin`, `MaxCapacity`; both from
+  `HKCU\...\Explorer\BitBucket\Volume\{GUID}`, without the key - 5% of the disk). The request carries the mode the page warned about (`recycle`); if the setting has changed since then - response 409, the page reloads the settings.
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Value |
+|---|---|---|
+| `show_folders_container` | `false` | `true` - shared folders inside "Folders" |
+| `folders_container_name` | `""` | own folder name; empty - "Folders" (localized by the UI language; in `VALID_EMPTY_KEYS`, can be cleared from the UI) |
+| `allow_disk_operations` | `false` | `true` - disk delete buttons on the "Folder management" page |
+| `use_recycle_bin` | `true` | `true` - delete to the Windows Recycle Bin, `false` - permanently |
 
 ---
 

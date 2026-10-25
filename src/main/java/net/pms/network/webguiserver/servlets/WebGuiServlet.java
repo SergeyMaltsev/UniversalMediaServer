@@ -38,11 +38,17 @@ public class WebGuiServlet extends GuiHttpServlet {
 	public static final String PLAYER_BASE_PATH = BASE_PATH + "player";
 	public static final String SETTINGS_BASE_PATH = BASE_PATH + "settings";
 	public static final String SHARED_BASE_PATH = BASE_PATH + "shared";
+	// <custom:folders-root> "Folder management" page
+	public static final String FOLDERS_BASE_PATH = BASE_PATH + "folders";
+	// </custom:folders-root>
 
 	private static final List<String> ROUTES = List.of(
 			ABOUT_BASE_PATH,
 			ACCOUNTS_BASE_PATH,
 			ACTIONS_BASE_PATH,
+			// <custom:folders-root> "Folder management" page, opened directly or reloaded
+			FOLDERS_BASE_PATH,
+			// </custom:folders-root>
 			LOGS_BASE_PATH,
 			PLAYER_BASE_PATH,
 			SETTINGS_BASE_PATH,

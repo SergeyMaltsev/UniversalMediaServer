@@ -28,6 +28,9 @@ export const defaultTooltipSettings = {
 export const gitHubNewIssueUrl = 'https://github.com/UniversalMediaServer/UniversalMediaServer/issues/new'
 export const aboutApiUrl = '/v1/api/about/'
 export const actionsApiUrl = '/v1/api/actions/'
+// <custom:folders-root> "Folder management" page API
+export const foldersApiUrl = '/v1/api/folders/'
+// </custom:folders-root>
 export const accountApiUrl = '/v1/api/account/'
 export const authApiUrl = '/v1/api/auth/'
 export const i18nApiUrl = '/v1/api/i18n/'
