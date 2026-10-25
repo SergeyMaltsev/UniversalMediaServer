@@ -462,6 +462,9 @@ public class StoreContainer extends StoreResource {
 	protected synchronized void sortChildrenIfNeeded() {
 		if (isChildrenSorted()) {
 			StoreResourceSorter.sortResourcesByDefault(children);
+			// <custom:folder-reset> Keep the "Reset watched" item last
+			FolderResetAction.moveToEnd(children);
+			// </custom:folder-reset>
 		}
 	}
 

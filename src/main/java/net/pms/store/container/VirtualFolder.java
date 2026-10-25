@@ -24,6 +24,9 @@ import net.pms.formats.Format;
 import net.pms.formats.FormatFactory;
 import net.pms.renderers.Renderer;
 import net.pms.store.FileSearch;
+// <custom:folder-reset> "Reset watched" item
+import net.pms.store.FolderResetAction;
+// </custom:folder-reset>
 import net.pms.store.StoreContainer;
 import net.pms.store.StoreResource;
 import net.pms.store.SystemFileResource;
@@ -367,6 +370,9 @@ public class VirtualFolder extends StoreContainer {
 		}
 		setDiscovered(analyzeChildren());
 		sortChildrenIfNeeded();
+		// <custom:folder-reset> "Reset watched" item at the end of a folder with files
+		FolderResetAction.addTo(this);
+		// </custom:folder-reset>
 		setLastRefreshTime(System.currentTimeMillis());
 	}
 
@@ -410,6 +416,7 @@ public class VirtualFolder extends StoreContainer {
 				renderer.getUmsConfiguration().getSortMethod(getPath()) == StoreResourceSorter.SORT_RANDOM ||
 				emptyFolderNowNotEmpty;
 	}
+
 
 	@Override
 	public synchronized void doRefreshChildren() {
