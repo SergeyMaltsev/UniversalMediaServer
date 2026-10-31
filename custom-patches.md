@@ -33,6 +33,7 @@ Summary:
 |---|---|---|
 | `folders-root` | "Folders" folder (own name) in the root instead of the shared folders; "Folder management" web UI page | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (new), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (new), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
 | `playback-labels` | Name = file name without suffixes, `[*]` / `[h:mm:ss]` label at the end, own thresholds | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
+| `position-tracker` | Position from the player goes into the standard watched logic, label reset when playing from the start | `PlaybackPositionTracker` (new), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -260,6 +261,44 @@ Custom Settings -> Root folders:
 | `show_played_label` | `true` | the `[*]` label |
 | `played_label_seconds_to_end` | `120` | the file counts as played for the label when stopped less than this many seconds before the end |
 | `resume` | `false` recommended | without the virtual "Resume: ..." entries |
+
+---
+
+## position-tracker
+
+### What it does
+
+- `Renderer.alert()` passes each change of the player state (AVTransport events and polling of
+  `GetPositionInfo` once a second during playback) to `PlaybackPositionTracker.update`.
+- The tracker remembers the last position (`RelTime`) of a UMS file (address `/ums/media/<uuid>/<id>/...`) separately for
+  each device. On `STOPPED` / change of file it passes it to the standard `MediaMonitor.stopped` (via
+  `MediaStore.stopPlaying`), which uses it instead of an estimate from the time of the HTTP stream. Writing to the database, "played"
+  (`minimum_watched_play_time`, `resume_back`), the "Fully played action" and the list refresh are standard.
+- While the device plays the file (the client may have buffered the stream) and for 2 minutes after its `STOPPED`, the estimate
+  from the HTTP stream is ignored for this device + file pair. Other devices are not affected.
+- A device switching to a foreign stream (not `/ums/media/`) ends the previous file the same way as `STOPPED`. If a device has no events
+  for 5 minutes (switched off, left without `STOPPED`), the record is dropped and the standard HTTP-stream estimate works again for this file.
+  On pause the record does not expire: during a pause the device is not polled.
+- Label reset: the file was started from the beginning (without seeking) and after `label_reset_seconds` seconds (2 by default) it still
+  plays from the beginning on the same device - the stop point becomes 0, "played" is cleared (without increasing the play counter, `MediaStatusStore.clearPlayback`), and clients get the
+  update. Trial requests and thumbnails do not clear the label. If you seek after starting from the beginning later than this
+  time, the label is already removed (the new stop point is still written when stopping). `0` - never reset.
+- Limitation: players that do not report the position (`GetPositionInfo` is not implemented, for example movian) and download
+  the file into their own cache do not give the server the exact position - for them the standard estimate by stream time remains.
+
+### Settings in the UI
+
+Custom Settings -> Root folders: "Clear the label after playing from the start for (seconds)", with a tooltip. Related standard setting: Transcoding
+Settings -> "Disable all transcoding" (the patches do not need transcoding).
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Value |
+|---|---|---|
+| `label_reset_seconds` | `2` | after how many seconds of playing from the start the label is cleared; `0` - never |
+
+Standard: `resume_back` (when UMS marks "played" itself), `minimum_watched_play_time`,
+`disable_transcoding = true` (recommended).
 
 ---
 

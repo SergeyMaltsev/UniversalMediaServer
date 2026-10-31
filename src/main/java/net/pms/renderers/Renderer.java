@@ -45,6 +45,9 @@ import net.pms.renderers.devices.players.PlaybackTimer;
 import net.pms.renderers.devices.players.PlayerState;
 import net.pms.renderers.devices.players.UPNPPlayer;
 import net.pms.store.MediaStore;
+// <custom:position-tracker> Renderer reported playback position
+import net.pms.store.PlaybackPositionTracker;
+// </custom:position-tracker>
 import net.pms.store.StoreItem;
 import net.pms.store.StoreResource;
 import net.pms.util.UMSUtils;
@@ -278,6 +281,7 @@ public class Renderer extends RendererDeviceConfiguration {
 		return mediaStore != null;
 	}
 	// </custom:common>
+
 	public synchronized MediaStore getMediaStore() {
 		if (mediaStore == null) {
 			mediaStore = new MediaStore(this);
@@ -642,6 +646,9 @@ public class Renderer extends RendererDeviceConfiguration {
 	}
 
 	public void alert() {
+		// <custom:position-tracker> Pass every renderer state change (and the 1 s position poll) to the tracker
+		PlaybackPositionTracker.update(this, data);
+		// </custom:position-tracker>
 		String transportState = data.get(TRANSPORT_STATE);
 		if (JUPnPDeviceHelper.isUpnpDevice(uuid) &&
 				(monitorThread == null || !monitorThread.isAlive()) &&

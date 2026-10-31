@@ -34,6 +34,9 @@ import net.pms.platform.PlatformUtils;
 import net.pms.renderers.Renderer;
 import net.pms.store.MediaStatusStore;
 import net.pms.store.MediaStoreIds;
+// <custom:position-tracker> Renderer reported positions
+import net.pms.store.PlaybackPositionTracker;
+// </custom:position-tracker>
 import net.pms.store.StoreContainer;
 import net.pms.store.StoreResource;
 import net.pms.store.item.RealFile;
@@ -198,6 +201,17 @@ public class MediaMonitor extends LocalizedStoreContainer {
 		if (lastStartPosition > 0D) {
 			elapsed += lastStartPosition;
 		}
+
+		// <custom:position-tracker> Use the position the renderer reported (GetPositionInfo) when there is one
+		Double reportedPosition = PlaybackPositionTracker.consumeReportedPosition(renderer, fullPathToFile);
+		if (reportedPosition != null) {
+			elapsed = reportedPosition;
+		} else if (PlaybackPositionTracker.isTrackedByRenderer(renderer, fullPathToFile)) {
+			// The renderer still plays it (the client closed a buffered stream) or already reported the stop
+			LOGGER.debug("{} is tracked by the renderer, ignoring the stream time", realFile.getName());
+			return;
+		}
+		// </custom:position-tracker>
 
 		boolean logTrace = LOGGER.isTraceEnabled() && !fullyPlayedAction.equals(FullyPlayedAction.NO_ACTION);
 		if (logTrace) {

@@ -32,6 +32,7 @@
 |---|---|---|
 | `folders-root` | Папка "Folders" (свое имя) в корне вместо общих папок; страница "Folder management" веб-интерфейса | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (новые), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (новые), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
 | `playback-labels` | Название = имя файла без суффиксов, метка `[*]` / `[h:mm:ss]` в конце, свои пороги | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
+| `position-tracker` | Позиция от плеера в штатный учет просмотра, сброс метки при просмотре с начала | `PlaybackPositionTracker` (новый), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -272,6 +273,46 @@ Custom Settings -> Root folders:
 | `show_played_label` | `true` | метка `[*]` |
 | `played_label_seconds_to_end` | `120` | файл считается просмотренным для метки, если остановлен меньше чем за столько секунд до конца |
 | `resume` | рекомендуется `false` | без виртуальных записей "Resume: ..." |
+
+---
+
+## position-tracker
+
+### Суть работы
+
+- `Renderer.alert()` передает каждое изменение состояния плеера (события AVTransport и опрос
+  `GetPositionInfo` раз в секунду во время воспроизведения) в `PlaybackPositionTracker.update`.
+- Трекер запоминает последнюю позицию (`RelTime`) файла UMS (адрес `/ums/media/<uuid>/<id>/...`) отдельно для
+  каждого устройства. При `STOPPED` / смене файла он передает ее в штатный `MediaMonitor.stopped` (через
+  `MediaStore.stopPlaying`), который берет ее вместо оценки по времени HTTP-потока. Запись в базу, "просмотрен"
+  (`minimum_watched_play_time`, `resume_back`), "Fully played action" и обновление списка - штатные.
+- Пока устройство играет файл (клиент мог закрыть буферизованный поток) и 2 минуты после его `STOPPED`, оценка
+  по HTTP-потоку для этой пары устройство + файл игнорируется. Другие устройства не затрагиваются.
+- Переход устройства на чужой поток (не `/ums/media/`) завершает прежний файл так же, как `STOPPED`. Если от
+  устройства 5 минут нет событий (выключено, ушло без `STOPPED`), запись отбрасывается и для этого файла снова
+  работает штатная оценка по HTTP-потоку. На паузе запись не устаревает: во время паузы устройство не опрашивается.
+- Сброс метки: файл запущен с начала (без перемотки) и через `label_reset_seconds` секунд (по умолчанию 2) все
+  еще играет с начала на том же устройстве - точка остановки 0, "просмотрен" снимается (без увеличения счетчика
+  воспроизведений, `MediaStatusStore.clearPlayback`), клиенты получают
+  обновление. Пробные запросы и миниатюры метку не стирают. Если после запуска с начала перемотать позже этого
+  времени, метка уже снята (новая точка остановки все равно запишется при остановке). `0` - не сбрасывать.
+- Ограничение: плееры, которые не сообщают позицию (`GetPositionInfo` не реализован, например movian) и качают
+  файл в свой кэш, серверу точную позицию не дают - для них остается штатная оценка по времени потока.
+
+### Настройки в UI
+
+Custom Settings -> Root folders: "Clear the label after playing from the start for (seconds)"
+("Сбрасывать метку после просмотра с начала в течение (секунд)"), с подсказкой. Связанное штатное: Transcoding
+Settings -> "Disable all transcoding" (патчам транскодирование не нужно).
+
+### Настройки в conf (`UMS.conf`)
+
+| Ключ | По умолчанию | Значение |
+|---|---|---|
+| `label_reset_seconds` | `2` | через сколько секунд просмотра с начала метка снимается; `0` - никогда |
+
+Штатные: `resume_back` (когда UMS сам отмечает "просмотрен"), `minimum_watched_play_time`,
+`disable_transcoding = true` (рекомендуется).
 
 ---
 
