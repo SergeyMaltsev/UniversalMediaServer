@@ -119,7 +119,15 @@ const About = ({ i18n, session }: { i18n: I18nInterface, session: SessionInterfa
           <Table striped>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th colSpan={2}><Text c="blue" size="lg" ta="center">{aboutDatas?.app}</Text></Table.Th>
+                {/* <custom-remove:logo> */}
+                {/* <Table.Th colSpan={2}><Text c="blue" size="lg" ta="center">{aboutDatas?.app}</Text></Table.Th> */}
+                {/* </custom-remove:logo> */}
+                {/* <custom:logo> The fork's logo above the application name */}
+                <Table.Th colSpan={2}>
+                  <img src="/icon-256.png" alt="Universal Media Server" width={96} height={96} style={{ display: 'block', margin: '8px auto' }} />
+                  <Text c="blue" size="lg" ta="center">{aboutDatas?.app}</Text>
+                </Table.Th>
+                {/* </custom:logo> */}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>

@@ -32,6 +32,7 @@ Summary:
 | Patch | What it does | Files |
 |---|---|---|
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
+| `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
 | `build-scripts` | Build scripts in `build/`, output files in `.gitignore`; the branch commit as `git.commit.id` (with uncommitted changes - `<commit>-dirty-<time>`, otherwise the browser keeps old translations); only the x86_64 installer (x86 is disabled in `pom.xml`, saves ~4 min) | `build/*`, `.gitignore`, `pom.xml` |
@@ -116,6 +117,39 @@ None (the panel width - by dragging or with the Customize -> Navbar width slider
 | Key | Default | Value |
 |---|---|---|
 | `renderers_name` | `{}` | own device names by UUID (set from the UI) |
+
+---
+
+## logo
+
+### What it does
+
+Own logo (source - `E:\Soft\UniversalMediaServer\resource\Logo.png`, 427x395, transparent background) instead of the
+UMS logo. All pictures are made from it (Pillow, LANCZOS resize, the logo centered in a square):
+
+| Where it shows | Files |
+|---|---|
+| Web UI header | `UmsAppShell.tsx`: `/icon-256.png` 36x36 at the start of the left group (after the menu button on a narrow screen), tag `custom:logo` |
+| "About" page (`/about`) | `About.tsx`: `/icon-256.png` 96x96 above the program name, tag `custom:logo` |
+| Web UI, browser tab, iOS | `react-client/public/favicon.ico` (16, 32, 48), `icon-32.png`, `icon-256.png`, `apple-touch-icon.png` (180) |
+| Server icon on TV (DLNA) | `src/main/resources/images/icon-square-{48,120,128,256}.png` and `-{48,120,128}.jpg` - on a dark blue background `#0E162C` (opaque) |
+| Window and tray of the desktop UMS | `images/icon-{16..64,128}.png`, `icon.svg` (PNG inside SVG, size 32x32 - checked by the standard `SvgMultiResolutionImageTest`) |
+| "About", `README.md` | `images/logo.png` (256), `logo.ico`, `logo.svg` (PNG inside SVG); the link in `README.md` - to `logo.png` of this branch (tags `<!-- <custom:logo> -->`) |
+| `UMS.exe`, installer, uninstaller entries | `src/main/external-resources/icon.ico` (16..256) |
+
+Not changed: `logo.icns` (macOS), `icon-bw*` / `icon-darkmode*` (monochrome tray icons of macOS / Linux),
+`splash/splash.png` (the splash screen of the desktop GUI, with text).
+
+The pictures are binary files, they have no tags. When merging upstream, a conflict in them is resolved in favor of ours
+(`git checkout --ours`); if upstream added a new icon size - make it from `Logo.png` in the same way.
+
+### Settings in the UI
+
+None.
+
+### Settings in conf (`UMS.conf`)
+
+None.
 
 ---
 
