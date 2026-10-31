@@ -34,7 +34,12 @@ export default function ScanSharedFoldersButton({
   canModify: boolean
 }) {
   const [isLoading, setLoading] = useState(false)
-  const haveFolder = sharedContents.find(sharedContent => sharedContent.type.startsWith('Folder'))
+  // <custom-remove:virtual-folders>
+  // const haveFolder = sharedContents.find(sharedContent => sharedContent.type.startsWith('Folder'))
+  // </custom-remove:virtual-folders>
+  // <custom:virtual-folders> Virtual folders are scanned too, so they also show the button
+  const haveFolder = sharedContents.find(sharedContent => sharedContent.type === 'Folder' || sharedContent.type === 'VirtualFolder')
+  // </custom:virtual-folders>
   const scanAllSharedFolders = async () => {
     setLoading(true)
     try {

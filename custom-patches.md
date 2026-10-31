@@ -38,6 +38,7 @@ Summary:
 | `reload-media` | "Control" folder in the root: reload the media library, restart the server, hibernate and shut down the PC | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (new), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
+| `virtual-folders` | Virtual folders (one name, several folders) inside "Folders" and in media library scanning | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Changing a setting rebuilds the shared folders too, not only the root | `MediaStore`, `Renderer` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
@@ -443,6 +444,34 @@ A key can be saved from the UI only if it is in `UmsConfiguration.getWebSettings
 ### Settings in conf (`UMS.conf`)
 
 No keys of its own.
+
+---
+
+## virtual-folders
+
+### What it does
+
+The standard virtual folders of Shared Content (type "Virtual folders": own name and a list of folders,
+whose content is shown together) are built into our patches:
+
+- With `show_folders_container = true` a virtual folder is created inside "Folders" (`MediaStore.setVirtualFolderContent`),
+  like ordinary shared folders, not in the root. The "Path" field of a virtual folder is counted from "Folders".
+- "Scan media library" (`MediaScanner.setSharedContent`) also goes through the active virtual
+  folders (standard - only the ordinary shared folders); the "add to the media library" flag of a virtual folder is respected.
+  The "Scan media library" button in Shared Content is visible also when there are only virtual folders
+  (`ScanSharedFoldersButton`, standard - only when there is an ordinary folder).
+- The "Folder management" page - see `folders-root` (the page code is entirely in the `folders-root` tags).
+
+Do not keep the same folder both as a separate shared folder and inside a virtual folder: the devices will show it twice.
+
+### Settings in the UI
+
+Standard: Shared Content -> Add -> Type "Virtual folders", Name, "Shared folders" (several). The checkbox
+"Merge virtual folders" is on the "Folder management" page.
+
+### Settings in conf (`UMS.conf`)
+
+No keys of its own (virtual folders are in `SHARED.conf`).
 
 ---
 

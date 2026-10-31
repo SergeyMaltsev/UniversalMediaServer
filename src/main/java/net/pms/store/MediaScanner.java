@@ -36,6 +36,9 @@ import net.pms.configuration.sharedcontent.FolderContent;
 import net.pms.configuration.sharedcontent.SharedContent;
 import net.pms.configuration.sharedcontent.SharedContentConfiguration;
 import net.pms.configuration.sharedcontent.SharedContentListener;
+// <custom:virtual-folders> The media scan also reads the folders of the virtual folders
+import net.pms.configuration.sharedcontent.VirtualFolderContent;
+// </custom:virtual-folders>
 import net.pms.database.MediaDatabase;
 import net.pms.database.MediaTableFiles;
 import net.pms.formats.Format;
@@ -48,6 +51,9 @@ import net.pms.renderers.devices.MediaScannerDevice;
 import net.pms.store.container.DVDISOFile;
 import net.pms.store.container.PlaylistFolder;
 import net.pms.store.container.RealFolder;
+// <custom:virtual-folders> The media scan also reads the folders of the virtual folders
+import net.pms.store.container.VirtualFolder;
+// </custom:virtual-folders>
 import net.pms.store.item.RealFile;
 import net.pms.util.FileUtil;
 import net.pms.util.FileWatcher;
@@ -211,6 +217,11 @@ public class MediaScanner implements SharedContentListener {
 					LOGGER.trace("createResourceFromFile has failed for {}", folder.getFile());
 				}
 			}
+			// <custom:virtual-folders> Virtual folders too (stock scans only the plain shared folders)
+			if (sharedContent instanceof VirtualFolderContent virtualFolder && virtualFolder.isActive()) {
+				RENDERER.getMediaStore().addChild(new VirtualFolder(RENDERER, virtualFolder));
+			}
+			// </custom:virtual-folders>
 		}
 	}
 
