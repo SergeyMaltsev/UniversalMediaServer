@@ -34,6 +34,7 @@
 | `playback-labels` | Название = имя файла без суффиксов, метка `[*]` / `[h:mm:ss]` в конце, свои пороги | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `position-tracker` | Позиция от плеера в штатный учет просмотра, сброс метки при просмотре с начала | `PlaybackPositionTracker` (новый), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
 | `folder-reset` | Элемент "Reset watched" в конце папки: сброс меток всех файлов папки | `FolderResetAction` (новый), `VirtualFolder`, `StoreContainer`, `UmsConfiguration`, `messages*.properties` |
+| `reload-media` | Папка "Control" в корне: обновить медиатеку, перезапуск сервера, гибернация и выключение ПК | `ControlFolder`, `MediaRescanAction`, `ServerRestartAction`, `PowerAction` (новые), `MediaStore`, `UmsConfiguration`, `CustomSettings.tsx`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -342,6 +343,51 @@ Custom Settings -> Root folders: "Show the "Reset watched" item at the end of fo
 | Ключ | По умолчанию | Значение |
 |---|---|---|
 | `show_folder_reset_item` | `true` | элемент "Reset watched" в конце папок с файлами (в `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS`) |
+
+---
+
+## reload-media
+
+### Суть работы
+
+- Корень заканчивается папкой "Control" ("Управление", `ControlFolder`) с элементами-действиями, каждый
+  включается своей настройкой; папка скрыта, если ни один не включен:
+  ```
+  Управление
+    Обновить медиатеку     MediaRescanAction
+    Перезапустить сервер   ServerRestartAction
+    Гибернация ПК          PowerAction HIBERNATE   (только Windows)
+    Выключить ПК           PowerAction SHUT_DOWN   (только Windows)
+  ```
+- Элементы - штатные пункты-действия (`VirtualVideoActionLocalized`), работают точно как встроенные пункты UMS
+  ("Перезапустить сервер", "Выключить компьютер" в папке настроек сервера): действие при запросе ролика, штатный
+  ролик `videos/action_success-512.mpg`, штатные миниатюры (`action-ok.png`, `action-restart.png`,
+  `action-shutdown.png`). Своих роликов, задержек и потоков нет.
+- "Обновить медиатеку" вызывает штатный `MediaScanner.startMediaScan()`: все файлы всех общих папок читаются в
+  базу сервера (то же, что "Scan media library" в Shared Content), после него - анализ базы. Если сканирование уже
+  идет, второе не запускается. Ход и время - в `debug.log` ("Media scan started" / "completed").
+- "Перезапустить сервер" - штатный `PMS.get().resetMediaServer()`, как встроенный пункт и кнопка "Restart server"
+  веб-интерфейса: медиасервер останавливается, устройства сбрасываются, сервер запускается снова; UMS работает.
+- "Гибернация ПК" - `shutdown.exe /h`; "Выключить ПК" - штатный `ProcessUtil.shutDownComputer()`
+  (`shutdown.exe -s -t 0`, затем UMS корректно завершается). Сразу при запуске элемента.
+- В `debug.log`: "Media library reload / Server restart / Hibernation / Shutdown requested by <устройство>".
+
+### Настройки в UI
+
+Custom Settings -> раздел "The "Control" folder" ("Папка «Управление»"): "Show the "Control" folder in the root",
+затем галочки элементов (активны при включенной папке), у каждой подсказка.
+
+### Настройки в conf (`UMS.conf`)
+
+Все ключи в `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS` (корень перестраивается сразу).
+
+| Ключ | По умолчанию | Значение |
+|---|---|---|
+| `show_control_folder` | `true` | папка "Control" в корне |
+| `show_reload_media_item` | `true` | "Reload media library" в папке |
+| `show_restart_server_item` | `true` | "Restart server" в папке |
+| `show_hibernate_item` | `true` | "Hibernate computer" в папке (только Windows) |
+| `show_shutdown_item` | `true` | "Shut down computer" в папке (только Windows) |
 
 ---
 
