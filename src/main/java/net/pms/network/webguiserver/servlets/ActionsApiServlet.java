@@ -28,6 +28,9 @@ import net.pms.database.MediaDatabase;
 import net.pms.iam.Account;
 import net.pms.iam.AuthService;
 import net.pms.iam.Permissions;
+// <custom:server-uuid> New server UUID action
+import net.pms.network.mediaserver.MediaServer;
+// </custom:server-uuid>
 import net.pms.network.mediaserver.jupnp.support.umsservice.impl.FilesStatusBackupManager;
 import net.pms.network.webguiserver.GuiHttpServlet;
 import net.pms.platform.PlatformUtils;
@@ -50,6 +53,9 @@ public class ActionsApiServlet extends GuiHttpServlet {
 				boolean canShutdownComputer = !(Platform.isLinux() || Platform.isMac()) || PlatformUtils.INSTANCE.isAdmin();
 				JsonObject jsonResponse = new JsonObject();
 				jsonResponse.addProperty("canShutdownComputer", canShutdownComputer);
+				// <custom:server-uuid> The server UUID for Custom Settings
+				jsonResponse.addProperty("serverUuid", MediaServer.getUuid());
+				// </custom:server-uuid>
 				respond(req, resp, jsonResponse.toString(), 200, "application/json");
 			} else {
 				LOGGER.trace("ActionsApiServlet request not available : {}", path);
@@ -80,6 +86,19 @@ public class ActionsApiServlet extends GuiHttpServlet {
 									respondForbidden(req, resp);
 								}
 							}
+							// <custom:server-uuid> New random server UUID, then the stock media server restart
+							case "Server.NewUuid" -> {
+								// It restarts the server and changes UMS.conf for good: both permissions
+								if (account.havePermission(Permissions.SERVER_RESTART) && account.havePermission(Permissions.SETTINGS_MODIFY)) {
+									JsonObject jsonResponse = new JsonObject();
+									jsonResponse.addProperty("serverUuid", MediaServer.renewUuid());
+									PMS.get().resetMediaServer();
+									respond(req, resp, jsonResponse.toString(), 200, "application/json");
+								} else {
+									respondForbidden(req, resp);
+								}
+							}
+							// </custom:server-uuid>
 							case "Server.RestoreBackup" -> {
 								FilesStatusBackupManager.getInstance().restore();
 								respond(req, resp, "{}", 200, "application/json");

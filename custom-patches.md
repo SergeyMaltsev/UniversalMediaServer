@@ -41,6 +41,7 @@ Summary:
 | `virtual-folders` | Virtual folders (one name, several folders) inside "Folders" and in media library scanning | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Changing a setting rebuilds the shared folders too, not only the root | `MediaStore`, `Renderer` |
 | `deep-browse` | A direct request for a folder by id (client bookmark) works right after a restart, without opening the root first | `MediaStore` |
+| `server-uuid` | "New server UUID" button in Custom Settings: new server UUID and restart (for a copy of UMS on another PC) | `MediaServer`, `ActionsApiServlet`, `CustomSettings.tsx` (section in the `custom-settings` tag), `messages*.properties` |
 | `ruid-no-mmap` | The RUID of a file is computed with a normal read, not a memory mapping: new files do not stay locked by UMS until garbage collection | `ResourceIdentifier` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
@@ -500,6 +501,29 @@ None.
 ### Settings in conf (`UMS.conf`)
 
 None.
+
+---
+
+## server-uuid
+
+### What it does
+
+Devices tell servers apart by the UPnP UUID (`uuid` in `UMS.conf`). When UMS is copied to another computer together with
+`portable\UMS.conf`, the `uuid` is copied too: two servers with one device UUID (Movian) are treated as one - they show the content of one under the name of the other, and bookmarks open on the wrong server.
+
+The patch: Server Settings -> Custom Settings -> "Server UUID" section: the current UUID and a red "New server UUID"
+button with confirmation. The `Server.NewUuid` action (`ActionsApiServlet`, the "restart server" and "change settings" rights): `MediaServer.renewUuid()` creates a random UUID, writes it to `UMS.conf` and to the `MediaServer.uuid` cache,
+then the standard restart of the media server (`PMS.resetMediaServer()`) - the UPnP device is created
+again already with the new UUID. The current UUID is returned by `GET /v1/api/actions` (`serverUuid`). Client bookmarks to this
+server stop working after the change (they contain the old UUID).
+
+### Settings in the UI
+
+Custom Settings -> "Server UUID": the "New server UUID" button (not a setting, an action at once).
+
+### Settings in conf (`UMS.conf`)
+
+No keys of its own; the standard `uuid` is changed.
 
 ---
 

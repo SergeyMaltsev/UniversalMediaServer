@@ -267,4 +267,23 @@ public class MediaServer {
 		return uuid;
 	}
 
+	// <custom:server-uuid> A new random server UUID (a copied UMS.conf gives two servers the same one)
+	/**
+	 * Generates a new random server UUID and saves it to UMS.conf.
+	 * <p>
+	 * The UPnP device takes the UUID when it is created, so the media server
+	 * must be restarted afterwards for renderers to see it.
+	 *
+	 * @return the new UUID.
+	 */
+	public static synchronized String renewUuid() {
+		String oldUuid = uuid;
+		uuid = UUID.randomUUID().toString();
+		CONFIGURATION.setUuid(uuid);
+		CONFIGURATION.saveConfiguration();
+		LOGGER.info("Replaced the server UUID {} with a new random UUID: {}", oldUuid, uuid);
+		return uuid;
+	}
+	// </custom:server-uuid>
+
 }
