@@ -17,6 +17,10 @@
 package net.pms.util;
 
 import java.io.File;
+// <custom:ruid-no-mmap> Plain reads instead of memory mapping
+import java.io.IOException;
+import java.nio.ByteBuffer;
+// </custom:ruid-no-mmap>
 import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.file.InvalidPathException;
@@ -101,14 +105,24 @@ public class ResourceIdentifier {
 			if (size == 0) {
 				hash = xx3.hashVoid();
 			} else if (size <= WHOLE_FILE_THRESHOLD) {
-				hash = xx3.hashBytes(fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, size));
+				// <custom-remove:ruid-no-mmap>
+				// hash = xx3.hashBytes(fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, size));
+				// </custom-remove:ruid-no-mmap>
+				// <custom:ruid-no-mmap> Read instead of map: a mapping keeps the file locked until GC
+				hash = xx3.hashBytes(readSegment(fileChannel, 0, (int) size));
+				// </custom:ruid-no-mmap>
 			} else {
 				long[] hashes = new long[SEGMENTS + 1];
 				hashes[0] = size;
 				long lastOffset = size - SEGMENT_BYTES;
 				for (int i = 0; i < SEGMENTS; i++) {
 					long offset = lastOffset * i / (SEGMENTS - 1);
-					hashes[i + 1] = xx3.hashBytes(fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, SEGMENT_BYTES));
+					// <custom-remove:ruid-no-mmap>
+					// hashes[i + 1] = xx3.hashBytes(fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, SEGMENT_BYTES));
+					// </custom-remove:ruid-no-mmap>
+					// <custom:ruid-no-mmap> Read instead of map: a mapping keeps the file locked until GC
+					hashes[i + 1] = xx3.hashBytes(readSegment(fileChannel, offset, SEGMENT_BYTES));
+					// </custom:ruid-no-mmap>
 				}
 				hash = xx3.hashLongs(hashes);
 			}
@@ -121,6 +135,31 @@ public class ResourceIdentifier {
 		}
 		return null;
 	}
+
+	// <custom:ruid-no-mmap> Plain reads instead of memory mapping
+	/**
+	 * Reads a part of the file into a heap buffer. A memory mapped buffer
+	 * ({@code FileChannel.map}) keeps the file open until the buffer is garbage
+	 * collected, even after the channel is closed: Windows then refuses to move
+	 * the file (Recycle Bin), rename it or open it exclusively. The hash of the
+	 * bytes is the same as with the mapping.
+	 *
+	 * @return the bytes, ready to read (position 0, limit = bytes read)
+	 */
+	private static ByteBuffer readSegment(FileChannel fileChannel, long offset, int length) throws IOException {
+		ByteBuffer buffer = ByteBuffer.allocate(length);
+		long position = offset;
+		while (buffer.hasRemaining()) {
+			int read = fileChannel.read(buffer, position);
+			if (read < 0) {
+				break;
+			}
+			position += read;
+		}
+		buffer.flip();
+		return buffer;
+	}
+	// </custom:ruid-no-mmap>
 
 	/**
 	 * Calculates the XXH3 hash and returns the value as a 16 character hex
