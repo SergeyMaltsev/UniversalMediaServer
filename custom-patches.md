@@ -40,6 +40,7 @@ Summary:
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `virtual-folders` | Virtual folders (one name, several folders) inside "Folders" and in media library scanning | `MediaStore`, `MediaScanner`, `ScanSharedFoldersButton.tsx` |
 | `settings-reload` | Changing a setting rebuilds the shared folders too, not only the root | `MediaStore`, `Renderer` |
+| `deep-browse` | A direct request for a folder by id (client bookmark) works right after a restart, without opening the root first | `MediaStore` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
@@ -472,6 +473,32 @@ Standard: Shared Content -> Add -> Type "Virtual folders", Name, "Shared folders
 ### Settings in conf (`UMS.conf`)
 
 No keys of its own (virtual folders are in `SHARED.conf`).
+
+---
+
+## deep-browse
+
+### What it does
+
+Fix for an upstream bug. The folder ids are permanent (the `STORE_IDS` table in the database), so clients (for example,
+Movian bookmarks `upnp:<uuid>:<service>:<id>`) open a folder directly by its id. After a UMS restart the device's folder tree
+in memory is empty, and `MediaStore.recreateResource()` restores a folder by the chain of parents from the database.
+The chain starts below the root (id 0), and the root is built only when `0` is opened: until the client opened the root,
+the first folder of the chain was not found, and the request returned "object not found".
+
+The patch: `getWeakResource(String)` first builds the root of this device if it does not exist yet and the id is not found - before
+the lock by id (building the root itself takes the locks by id, the reverse order could hang). A thread that is
+building the root right now (`Thread.holdsLock(this)`: when building `DbIdLibrary` itself looks up folders by id, for example "Audio")
+does not build the root again - otherwise infinite recursion (`StackOverflowError`); other threads wait for the end of the building on
+the `MediaStore` monitor and then go on with the ready root.
+
+### Settings in the UI
+
+None.
+
+### Settings in conf (`UMS.conf`)
+
+None.
 
 ---
 
