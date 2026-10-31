@@ -30,6 +30,13 @@ export interface RendererState {
 export interface Renderer {
   id: number
   name: string
+  // <custom:common> Own renderer name, MAC address
+  /** the name the device reports, without the own name */
+  deviceName: string
+  isRenamed: boolean
+  /** "" if unknown */
+  macAddress: string
+  // </custom:common>
   address: string
   uuid: string
   icon: string

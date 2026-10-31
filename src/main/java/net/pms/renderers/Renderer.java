@@ -160,6 +160,20 @@ public class Renderer extends RendererDeviceConfiguration {
 	 */
 	@Override
 	public String getRendererName() {
+		// <custom:common> The own name set in the web UI comes first
+		String ownName = RendererNames.getName(getUUID());
+		if (ownName != null) {
+			return ownName;
+		}
+		return getDeviceName();
+	}
+
+	/**
+	 * @return the name the device reports (UPnP friendlyName) or the renderer
+	 * configuration name, without the own name.
+	 */
+	public String getDeviceName() {
+		// </custom:common>
 		if (details != null && details.containsKey("friendlyName")) {
 			return details.get("friendlyName");
 		} else if (isUpnp()) {
@@ -259,6 +273,11 @@ public class Renderer extends RendererDeviceConfiguration {
 	 *
 	 * @return The MediaStore.
 	 */
+	// <custom:common> Whether the media store exists, without creating it (getMediaStore() creates and discovers it)
+	public synchronized boolean hasMediaStore() {
+		return mediaStore != null;
+	}
+	// </custom:common>
 	public synchronized MediaStore getMediaStore() {
 		if (mediaStore == null) {
 			mediaStore = new MediaStore(this);

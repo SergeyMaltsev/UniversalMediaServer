@@ -61,6 +61,10 @@ public class AboutApiServlet extends GuiHttpServlet {
 				boolean released = customVersion != null && !customVersion.isBlank() && !customVersion.startsWith("${");
 				jsonResponse.addProperty("version", released ? customVersion : PMS.getVersion());
 				// </custom:release>
+				// <custom:common> Build time for the status bar ("" when not built by build.ps1)
+				String buildTime = PropertiesUtil.getProjectProperties().get("project.build.time");
+				jsonResponse.addProperty("buildTime", buildTime == null || buildTime.startsWith("${") ? "" : buildTime);
+				// </custom:common>
 				String commitId = PropertiesUtil.getProjectProperties().get("git.commit.id");
 				jsonResponse.addProperty("commit", commitId.substring(0, 9) + " (" + PropertiesUtil.getProjectProperties().get("git.commit.time") + ")");
 				jsonResponse.addProperty("commitUrl", "https://github.com/UniversalMediaServer/UniversalMediaServer/tree/" + commitId);

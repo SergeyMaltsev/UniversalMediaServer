@@ -398,6 +398,9 @@ public class UmsConfiguration extends BaseConfiguration {
 	private static final String KEY_RENDERER_FORCE_DEFAULT = "renderer_force_default";
 	private static final String KEY_RENDERERS_FILTER = "renderers_filter";
 	private static final String KEY_RENDERERS_USER = "renderers_user";
+	// <custom:common> Own names of renderers (RendererNames)
+	private static final String KEY_RENDERERS_NAME = "renderers_name";
+	// </custom:common>
 	private static final String KEY_RESUME = "resume";
 	private static final String KEY_RESUME_BACK = "resume_back";
 	private static final String KEY_RESUME_KEEP_TIME = "resume_keep_time";
@@ -592,6 +595,7 @@ public class UmsConfiguration extends BaseConfiguration {
 	public static final Set<String> LANGUAGE_CHANGED = Set.of(
 		KEY_LANGUAGE
 	);
+
 
 	/**
 	 * The set of keys defining when the renderers has to rebuild their media store
@@ -4361,6 +4365,23 @@ public class UmsConfiguration extends BaseConfiguration {
 		configuration.setProperty(KEY_RENDERERS_USER, value);
 	}
 
+	// <custom:common> Own names of renderers (RendererNames)
+	/**
+	 * Gets the own names of the renderers, a JSON map UUID -> name with
+	 * {@code "} written as {@code |}.
+	 */
+	public final String getRenderersName() {
+		return getString(KEY_RENDERERS_NAME, "{}");
+	}
+
+	/**
+	 * Sets the own names of the renderers.
+	 */
+	public void setRenderersName(String value) {
+		configuration.setProperty(KEY_RENDERERS_NAME, value);
+	}
+	// </custom:common>
+
 	public void setPreventSleep(PreventSleepMode value) {
 		if (value == null) {
 			throw new NullPointerException("value cannot be null");
@@ -4564,6 +4585,11 @@ public class UmsConfiguration extends BaseConfiguration {
 	public void setScanSharedFoldersOnStartup(final boolean value) {
 		this.configuration.setProperty(KEY_SCAN_SHARED_FOLDERS_ON_STARTUP, value);
 	}
+
+
+
+
+
 
 	/**
 	 * Whether to show the "Recently Played" folder on the renderer.

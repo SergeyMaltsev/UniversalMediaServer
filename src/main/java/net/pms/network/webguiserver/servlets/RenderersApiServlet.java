@@ -39,6 +39,9 @@ import net.pms.network.NetworkDeviceFilter;
 import net.pms.network.webguiserver.GuiHttpServlet;
 import net.pms.network.webguiserver.RendererItem;
 import net.pms.renderers.RendererFilter;
+// <custom:common> Own renderer name
+import net.pms.renderers.RendererNames;
+// </custom:common>
 import net.pms.renderers.RendererUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,6 +164,11 @@ public class RenderersApiServlet extends GuiHttpServlet {
 							int userId = data.get("userId").getAsInt();
 							RendererUser.setRendererUser(uuid, userId);
 						}
+						// <custom:common> Own renderer name, "" restores the device's own name
+						if (data.has("name")) {
+							RendererNames.setName(uuid, data.get("name").getAsString());
+						}
+						// </custom:common>
 					}
 					respond(req, resp, "{}", 200, "application/json");
 				}
