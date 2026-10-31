@@ -25,6 +25,9 @@ import net.pms.network.webguiserver.servlets.AboutApiServlet;
 import net.pms.network.webguiserver.servlets.AccountApiServlet;
 import net.pms.network.webguiserver.servlets.ActionsApiServlet;
 import net.pms.network.webguiserver.servlets.AuthApiServlet;
+// <custom:folders-root> "Folder management" page API
+import net.pms.network.webguiserver.servlets.FolderManagerApiServlet;
+// </custom:folders-root>
 import net.pms.network.webguiserver.servlets.I18nApiServlet;
 import net.pms.network.webguiserver.servlets.LogsApiServlet;
 import net.pms.network.webguiserver.servlets.PlayerApiServlet;
@@ -73,6 +76,9 @@ public class WebGuiServerJetty extends WebGuiServer {
 		addServlet(servletHandler, AccountApiServlet.class);
 		addServlet(servletHandler, ActionsApiServlet.class);
 		addServlet(servletHandler, AuthApiServlet.class);
+		// <custom:folders-root> "Folder management" page API
+		addServlet(servletHandler, FolderManagerApiServlet.class);
+		// </custom:folders-root>
 		addServlet(servletHandler, I18nApiServlet.class);
 		addServlet(servletHandler, LogsApiServlet.class);
 		addServlet(servletHandler, PlayerApiServlet.class);

@@ -423,6 +423,12 @@ public class UmsConfiguration extends BaseConfiguration {
 	private static final String KEY_SHARED_CONF_PATH = "shared_conf";
 	private static final String KEY_SHOW_INFO_ABOUT_AUTOMATIC_VIDEO_SETTING = "show_info";
 	private static final String KEY_SHOW_MEDIA_LIBRARY_FOLDER = "show_media_library_folder";
+	// <custom:folders-root> Keys for the "Folders" container in the root
+	private static final String KEY_FOLDERS_CONTAINER_NAME = "folders_container_name";
+	private static final String KEY_SHOW_FOLDERS_CONTAINER = "show_folders_container";
+	private static final String KEY_ALLOW_DISK_OPERATIONS = "allow_disk_operations";
+	private static final String KEY_USE_RECYCLE_BIN = "use_recycle_bin";
+	// </custom:folders-root>
 	private static final String KEY_SHOW_RECENTLY_PLAYED_FOLDER = "show_recently_played_folder";
 	private static final String KEY_SHOW_SERVER_SETTINGS_FOLDER = "show_server_settings_folder";
 	private static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
@@ -613,6 +619,10 @@ public class UmsConfiguration extends BaseConfiguration {
 		KEY_HIDE_EMPTY_FOLDERS,
 		KEY_OPEN_ARCHIVES,
 		KEY_PRETTIFY_FILENAMES,
+		// <custom:folders-root> Rebuild the renderers' root when the keys change
+		KEY_FOLDERS_CONTAINER_NAME,
+		KEY_SHOW_FOLDERS_CONTAINER,
+		// </custom:folders-root>
 		KEY_SHOW_MEDIA_LIBRARY_FOLDER,
 		KEY_SHOW_RECENTLY_PLAYED_FOLDER,
 		KEY_SHOW_SERVER_SETTINGS_FOLDER,
@@ -649,6 +659,9 @@ public class UmsConfiguration extends BaseConfiguration {
 	 */
 	public static final List<String> VALID_EMPTY_KEYS = List.of(
 		KEY_ALTERNATE_THUMB_FOLDER,
+		// <custom:folders-root> An empty "Folders" name means the default (localized) name
+		KEY_FOLDERS_CONTAINER_NAME,
+		// </custom:folders-root>
 		KEY_SERVER_HOSTNAME,
 		KEY_NETWORK_INTERFACE,
 		KEY_SERVER_PORT,
@@ -4586,6 +4599,43 @@ public class UmsConfiguration extends BaseConfiguration {
 		this.configuration.setProperty(KEY_SCAN_SHARED_FOLDERS_ON_STARTUP, value);
 	}
 
+	// <custom:folders-root> Getters for the "Folders" container in the root
+	/**
+	 * Whether to put the shared folders into a "Folders" container in the
+	 * root folder (next to the Media Library) instead of the root itself.
+	 *
+	 * @return whether the shared folders are grouped in a "Folders" container
+	 */
+	public boolean isShowFoldersContainer() {
+		return getBoolean(KEY_SHOW_FOLDERS_CONTAINER, false);
+	}
+
+	/**
+	 * The user's name for the "Folders" container.
+	 *
+	 * @return the name, or "" for the default localized name
+	 */
+	public String getFoldersContainerName() {
+		return getString(KEY_FOLDERS_CONTAINER_NAME, "").trim();
+	}
+
+	/**
+	 * @return whether the "Folder management" page may delete files and
+	 * folders from the disk (off by default: the delete buttons are hidden
+	 * and the server refuses)
+	 */
+	public boolean isAllowDiskOperations() {
+		return getBoolean(KEY_ALLOW_DISK_OPERATIONS, false);
+	}
+
+	/**
+	 * @return whether "Folder management" deletes into the Windows Recycle Bin
+	 * instead of deleting for good
+	 */
+	public boolean isUseRecycleBin() {
+		return getBoolean(KEY_USE_RECYCLE_BIN, true);
+	}
+	// </custom:folders-root>
 
 
 
@@ -6043,6 +6093,12 @@ public class UmsConfiguration extends BaseConfiguration {
 		jObj.add(KEY_SELECTED_RENDERERS, allRenderers);
 		jObj.addProperty(KEY_SERVER_NAME, PMS.NAME);
 		jObj.addProperty(KEY_SHOW_MEDIA_LIBRARY_FOLDER, true);
+		// <custom:folders-root> Web UI defaults, also make the keys savable from the web UI
+		jObj.addProperty(KEY_FOLDERS_CONTAINER_NAME, "");
+		jObj.addProperty(KEY_SHOW_FOLDERS_CONTAINER, false);
+		jObj.addProperty(KEY_ALLOW_DISK_OPERATIONS, false);
+		jObj.addProperty(KEY_USE_RECYCLE_BIN, true);
+		// </custom:folders-root>
 		jObj.addProperty(KEY_SHOW_RECENTLY_PLAYED_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_SERVER_SETTINGS_FOLDER, false);
 		jObj.addProperty(KEY_SHOW_SPLASH_SCREEN, true);

@@ -33,6 +33,9 @@ import Accounts from '../Accounts/Accounts'
 import Actions from '../Actions/Actions'
 import BrowserSettings from '../BrowserSettings/BrowserSettings'
 import ColorSchemeButton from './ColorSchemeButton'
+// <custom:folders-root> "Folder management" page
+import FolderManager from '../FolderManager/FolderManager'
+// </custom:folders-root>
 import Home from '../Home/Home'
 import LanguagesMenu from '../UmsApp/LanguagesMenu'
 import Login from '../Login/Login'
@@ -173,6 +176,9 @@ export default function UmsAppShell({ i18n, session, player }: { i18n: I18nInter
                     <Route path="accounts" element={<Accounts i18n={i18n} session={session} />}></Route>
                     <Route path="actions" element={<Actions i18n={i18n} session={session} />}></Route>
                     <Route path="customize" element={<BrowserSettings i18n={i18n} session={session} />}></Route>
+                    {/* <custom:folders-root> "Folder management" page */}
+                    <Route path="folders" element={<FolderManager i18n={i18n} session={session} />}></Route>
+                    {/* </custom:folders-root> */}
                     <Route path="logs" element={<Logs i18n={i18n} session={session} />}></Route>
                     <Route path="player" element={<Player i18n={i18n} session={session} player={player} />}></Route>
                     <Route path="player/:req/:id" element={<Player i18n={i18n} session={session} player={player} />}></Route>

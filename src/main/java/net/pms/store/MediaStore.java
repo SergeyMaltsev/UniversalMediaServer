@@ -50,6 +50,9 @@ import net.pms.store.container.FolderLimit;
 import net.pms.store.container.IPhotoLibrary;
 import net.pms.store.container.ITunesLibrary;
 import net.pms.store.container.ImagesFeed;
+// <custom:folders-root> "Folders" container in the root
+import net.pms.store.container.FoldersContainer;
+// </custom:folders-root>
 import net.pms.store.container.MediaLibrary;
 import net.pms.store.container.MediaMonitor;
 import net.pms.store.container.PlaylistFolder;
@@ -95,6 +98,9 @@ public class MediaStore extends StoreContainer {
 	private final UnattachedFolder tempFolder;
 	private final MediaLibrary mediaLibrary;
 	private final DbIdLibrary dbIdLibrary;
+	// <custom:folders-root> "Folders" container in the root
+	private final FoldersContainer foldersContainer;
+	// </custom:folders-root>
 
 	private DynamicPlaylist dynamicPls;
 	private FolderLimit lim;
@@ -110,6 +116,9 @@ public class MediaStore extends StoreContainer {
 		tempFolder = new UnattachedFolder(renderer, TEMP_TAG);
 		mediaLibrary = new MediaLibrary(renderer);
 		dbIdLibrary = new DbIdLibrary(renderer);
+		// <custom:folders-root> "Folders" container in the root
+		foldersContainer = new FoldersContainer(renderer);
+		// </custom:folders-root>
 		setLongId(0);
 	}
 
@@ -177,6 +186,20 @@ public class MediaStore extends StoreContainer {
 			}
 		}
 
+		// <custom:folders-root> "Folders" (shared folders) in the root
+		if (renderer.getUmsConfiguration().isShowFoldersContainer()) {
+			foldersContainer.updateName();
+			// Keep the shared folders discovered last time so their ids stay the same
+			backupChildren.addAll(foldersContainer.getChildren());
+			foldersContainer.getChildren().clear();
+			if (backupChildren.contains(foldersContainer)) {
+				addChildInternal(foldersContainer, false);
+				backupChildren.remove(foldersContainer);
+			} else {
+				addChild(foldersContainer);
+			}
+		}
+		// </custom:folders-root>
 		dbIdLibrary.reset(backupChildren);
 
 		if (mon != null) {
@@ -304,7 +327,12 @@ public class MediaStore extends StoreContainer {
 		for (File file : allFiles) {
 			StoreResource resource = createResourceFromFile(file);
 			if (resource != null) {
-				addChild(resource, true, true);
+				// <custom-remove:folders-root>
+				// addChild(resource, true, true);
+				// </custom-remove:folders-root>
+				// <custom:folders-root> Flattened files also go into "Folders" when it is enabled
+				(renderer.getUmsConfiguration().isShowFoldersContainer() ? foldersContainer : this).addChild(resource, true, true);
+				// </custom:folders-root>
 				if (resource instanceof RealFile) {
 					realSystemFileResources.add(resource);
 				}
@@ -346,14 +374,27 @@ public class MediaStore extends StoreContainer {
 
 	private StoreResource setFolderContent(FolderContent folderContent) {
 		if (folderContent.getFile() != null) {
+			// <custom:folders-root> Shared folders go into "Folders" when it is enabled
+			StoreContainer target = renderer.getUmsConfiguration().isShowFoldersContainer() ? foldersContainer : this;
+			// </custom:folders-root>
 			StoreResource realSystemFileResource = findResourceFromFile(backupChildren, folderContent.getFile());
 			if (realSystemFileResource != null) {
-				addChildInternal(realSystemFileResource, false);
+				// <custom-remove:folders-root>
+				// addChildInternal(realSystemFileResource, false);
+				// </custom-remove:folders-root>
+				// <custom:folders-root> Add to the "Folders" container or the root
+				target.addChildInternal(realSystemFileResource, false);
+				// </custom:folders-root>
 				backupChildren.remove(realSystemFileResource);
 			} else {
 				realSystemFileResource = createResourceFromFile(folderContent.getFile(), true);
 				if (realSystemFileResource != null) {
-					addChild(realSystemFileResource, true, true);
+					// <custom-remove:folders-root>
+					// addChild(realSystemFileResource, true, true);
+					// </custom-remove:folders-root>
+					// <custom:folders-root> Add to the "Folders" container or the root
+					target.addChild(realSystemFileResource, true, true);
+					// </custom:folders-root>
 				} else {
 					LOGGER.trace("createResourceFromFile has failed for {}", folderContent.getFile());
 				}

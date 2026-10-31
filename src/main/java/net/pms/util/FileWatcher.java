@@ -183,6 +183,50 @@ public class FileWatcher {
 		}
 	}
 
+	// <custom:folders-root> Release the watches of a folder before it goes to the Recycle Bin
+	/**
+	 * Cancels the watches of the folder and of all folders inside it: on
+	 * Windows a watched folder holds a handle that keeps the folder from being
+	 * moved (to the Recycle Bin).
+	 *
+	 * @param dir the folder
+	 * @return the watches that were on them, for {@link #rewatch(List, Path)}
+	 */
+	public static List<Watch> unwatch(Path dir) {
+		List<Watch> watches = new ArrayList<>();
+		for (Iterator<WatchKey> iterator = keys.keys().asIterator(); iterator.hasNext();) {
+			final WatchKey key = iterator.next();
+			if (key.watchable() instanceof Path path && path.startsWith(dir)) {
+				ArrayList<Watch> keyWatches = keys.get(key);
+				// A copy: the watcher thread may drop expired watches meanwhile
+				for (Watch w : keyWatches == null ? List.<Watch>of() : new ArrayList<>(keyWatches)) {
+					if (!watches.contains(w)) {
+						watches.add(w);
+					}
+				}
+				LOGGER.debug("Releasing the file watch at {}", path);
+				// Only cancel: the watcher thread may hold this key already, it drops it after a failed reset()
+				key.cancel();
+			}
+		}
+		return watches;
+	}
+
+	/**
+	 * Watches the folder again with the watches {@link #unwatch(Path)} took
+	 * off it (the folder could not be moved after all).
+	 */
+	public static void rewatch(List<Watch> watches, Path dir) {
+		for (Watch w : watches) {
+			if (Watch.isRecursive(w)) {
+				addRecursive(w, dir);
+			} else {
+				add(w, dir);
+			}
+		}
+	}
+	// </custom:folders-root>
+
 	/**
 	 * Remove a file watchpoint from the Watch Service.
 	 *
