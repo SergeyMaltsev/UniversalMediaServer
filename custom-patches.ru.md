@@ -31,6 +31,7 @@
 | Патч | Что делает | Файлы |
 |---|---|---|
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
+| `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
@@ -121,6 +122,28 @@
 | Ключ | По умолчанию | Значение |
 |---|---|---|
 | `renderers_name` | `{}` | свои имена устройств по UUID (задаются из интерфейса) |
+
+---
+
+## custom-settings
+
+### Суть работы
+
+Вкладка "Custom Settings" ("Свои настройки") в Server Settings, видна всегда (не зависит от "Show advanced
+settings"). Все настройки своих патчей с интерфейсом - здесь, штатные вкладки не меняются. Компонент
+`CustomSettings.tsx`, вкладка и панель добавлены в `ServerSettings.tsx`.
+
+Разделы: Root folders ("Папки в корне") - настройки `folders-root`, `playback-labels`, `position-tracker` и
+`folder-reset`, `reload-media`.
+
+### Настройки в UI
+
+Сама вкладка - это и есть UI; новые настройки патчей добавлять сюда, строки - на английском и русском.
+Ключ можно сохранить из интерфейса, только если он есть в `UmsConfiguration.getWebSettingsWithDefaults()`.
+
+### Настройки в conf (`UMS.conf`)
+
+Своих ключей нет.
 
 ---
 

@@ -28,6 +28,9 @@ import { SessionInterface, UmsPermission } from '../../services/session-service'
 import { SelectionSettingsData } from '../../services/settings-service'
 import { settingsApiUrl } from '../../utils'
 import { showError, showLoading, updateError, updateInfo, updateSuccess } from '../../utils/notifications'
+// <custom:custom-settings> "Custom Settings" tab
+import CustomSettings from './CustomSettings'
+// </custom:custom-settings>
 import GeneralSettings from './GeneralSettings'
 import NavigationSettings from './NavigationSettings'
 import RenderersSettings from './RenderersSettings'
@@ -175,6 +178,9 @@ export default function ServerSettings({ i18n, session }: { i18n: I18nInterface,
                   {advancedSettings
                     && <Tabs.Tab value="NavigationSettings">{i18n.get('NavigationSettings')}</Tabs.Tab>}
                   <Tabs.Tab value="TranscodingSettings">{i18n.get('TranscodingSettings')}</Tabs.Tab>
+                  {/* <custom:custom-settings> "Custom Settings" tab, always visible */}
+                  <Tabs.Tab value="CustomSettings">{i18n.get('CustomSettings')}</Tabs.Tab>
+                  {/* </custom:custom-settings> */}
                 </Tabs.List>
                 <Tabs.Panel value="GeneralSettings">
                   <GeneralSettings i18n={i18n} form={form} defaultConfiguration={defaultConfiguration} selectionSettings={selectionSettings} advancedSettings={advancedSettings} setAdvancedSettings={setAdvancedSettings} />
@@ -194,6 +200,11 @@ export default function ServerSettings({ i18n, session }: { i18n: I18nInterface,
                 <Tabs.Panel value="TranscodingSettings">
                   <TranscodingSettings i18n={i18n} canModify={canModify} form={form} defaultConfiguration={defaultConfiguration} selectionSettings={selectionSettings} advancedSettings={advancedSettings} />
                 </Tabs.Panel>
+                {/* <custom:custom-settings> "Custom Settings" tab */}
+                <Tabs.Panel value="CustomSettings">
+                  <CustomSettings i18n={i18n} canModify={canModify} canRestartServer={canModify && session.havePermission(UmsPermission.server_restart)} form={form} />
+                </Tabs.Panel>
+                {/* </custom:custom-settings> */}
               </Tabs>
             )}
             {canModify && (
