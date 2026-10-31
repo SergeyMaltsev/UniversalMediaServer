@@ -439,6 +439,9 @@ public class UmsConfiguration extends BaseConfiguration {
 	// <custom:position-tracker> Key for clearing the label when a file plays from the start
 	private static final String KEY_LABEL_RESET_SECONDS = "label_reset_seconds";
 	// </custom:position-tracker>
+	// <custom:folder-reset> Key for the "Reset watched" item at the end of a folder
+	private static final String KEY_SHOW_FOLDER_RESET_ITEM = "show_folder_reset_item";
+	// </custom:folder-reset>
 	private static final String KEY_SHOW_RECENTLY_PLAYED_FOLDER = "show_recently_played_folder";
 	private static final String KEY_SHOW_SERVER_SETTINGS_FOLDER = "show_server_settings_folder";
 	private static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
@@ -648,6 +651,9 @@ public class UmsConfiguration extends BaseConfiguration {
 		KEY_SHOW_FOLDERS_CONTAINER,
 		// </custom:folders-root>
 		KEY_SHOW_MEDIA_LIBRARY_FOLDER,
+		// <custom:folder-reset> Rebuild the folders when the "Reset watched" item is switched
+		KEY_SHOW_FOLDER_RESET_ITEM,
+		// </custom:folder-reset>
 		KEY_SHOW_RECENTLY_PLAYED_FOLDER,
 		KEY_SHOW_SERVER_SETTINGS_FOLDER,
 		KEY_SHOW_TRANSCODE_FOLDER,
@@ -4711,6 +4717,14 @@ public class UmsConfiguration extends BaseConfiguration {
 	}
 	// </custom:position-tracker>
 
+	// <custom:folder-reset> Getter for the "Reset watched" item at the end of a folder
+	/**
+	 * @return whether folders with files end with the "Reset watched" item
+	 */
+	public boolean isShowFolderResetItem() {
+		return getBoolean(KEY_SHOW_FOLDER_RESET_ITEM, true);
+	}
+	// </custom:folder-reset>
 
 
 	/**
@@ -6181,6 +6195,9 @@ public class UmsConfiguration extends BaseConfiguration {
 		// <custom:position-tracker> Web UI default for clearing the label
 		jObj.addProperty(KEY_LABEL_RESET_SECONDS, 2);
 		// </custom:position-tracker>
+		// <custom:folder-reset> Web UI default for the "Reset watched" item
+		jObj.addProperty(KEY_SHOW_FOLDER_RESET_ITEM, true);
+		// </custom:folder-reset>
 		jObj.addProperty(KEY_SHOW_RECENTLY_PLAYED_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_SERVER_SETTINGS_FOLDER, false);
 		jObj.addProperty(KEY_SHOW_SPLASH_SCREEN, true);

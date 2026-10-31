@@ -34,6 +34,7 @@ Summary:
 | `folders-root` | "Folders" folder (own name) in the root instead of the shared folders; "Folder management" web UI page | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (new), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (new), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
 | `playback-labels` | Name = file name without suffixes, `[*]` / `[h:mm:ss]` label at the end, own thresholds | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `position-tracker` | Position from the player goes into the standard watched logic, label reset when playing from the start | `PlaybackPositionTracker` (new), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
+| `folder-reset` | "Reset watched" item at the end of a folder: resets the labels of all files in the folder | `FolderResetAction` (new), `VirtualFolder`, `StoreContainer`, `UmsConfiguration`, `messages*.properties` |
 | `common` | General improvements not tied to plugins: draggable left panel edge; device cards: rename, MAC, play icon, 3 per row; red server restart button in the header | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (new), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | "Custom Settings" tab in Server Settings for the settings of our patches | `CustomSettings.tsx` (new), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -299,6 +300,31 @@ Settings -> "Disable all transcoding" (the patches do not need transcoding).
 
 Standard: `resume_back` (when UMS marks "played" itself), `minimum_watched_play_time`,
 `disable_transcoding = true` (recommended).
+
+---
+
+## folder-reset
+
+### What it does
+
+- Each shared folder that contains files ends with the "Reset watched" item (`FolderResetAction`). After sorting it goes back
+  to the end (`StoreContainer.sortChildrenIfNeeded`). It is not added to folders in A-Z mode (`atz_limit`).
+- Starting the item: for all files of this folder (without subfolders) that have a label, the stop point 0 is set in the database
+  and "played" is cleared (`MediaStatusStore.clearPlayback`: the play counter does not grow; in folders without
+  "monitored" the status is not stored and is not changed), and the folder is refreshed on the clients. The user is the device's account.
+- The item is a standard action item (`VirtualVideoActionLocalized`), it works exactly like the built-in UMS items
+  ("Restart server" in the server settings folder): an action when the item is requested, the standard
+  video `videos/action_success-512.mpg`, the standard thumbnail `images/store/action-ok.png`. There are no own videos or processing.
+
+### Settings in the UI
+
+Custom Settings -> Root folders: "Show the "Reset watched" item at the end of folders", with a tooltip.
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Value |
+|---|---|---|
+| `show_folder_reset_item` | `true` | the "Reset watched" item at the end of folders with files (in `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS`) |
 
 ---
 

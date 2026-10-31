@@ -33,6 +33,7 @@
 | `folders-root` | Папка "Folders" (свое имя) в корне вместо общих папок; страница "Folder management" веб-интерфейса | `UmsConfiguration`, `MediaStore`, `FoldersContainer`, `FolderManagerApiServlet` (новые), `FileWatcher`, `WebGuiServerJetty`, `FullyPlayed`, `FolderManager/*.tsx`, `folder-service.tsx` (новые), `ManageNavbar.tsx`, `UmsAppShell.tsx`, `messages*.properties` |
 | `playback-labels` | Название = имя файла без суффиксов, метка `[*]` / `[h:mm:ss]` в конце, свои пороги | `UmsConfiguration`, `FullyPlayed`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `messages*.properties` |
 | `position-tracker` | Позиция от плеера в штатный учет просмотра, сброс метки при просмотре с начала | `PlaybackPositionTracker` (новый), `UmsConfiguration`, `Renderer`, `StoreItem`, `MediaMonitor`, `messages*.properties` |
+| `folder-reset` | Элемент "Reset watched" в конце папки: сброс меток всех файлов папки | `FolderResetAction` (новый), `VirtualFolder`, `StoreContainer`, `UmsConfiguration`, `messages*.properties` |
 | `common` | Общие улучшения, не связанные с плагинами: перетаскиваемый край левой панели; карточки устройств: переименование, MAC, значок воспроизведения, 3 в ряд; красная кнопка перезапуска сервера в шапке | `NavbarSplitter.tsx`, `RestartServerButton.tsx`, `RendererRenameModal.tsx`, `RendererNames`, `MacAddresses` (новые), `UmsAppShell.tsx`, `Renderers.tsx`, `home-service.ts`, `Renderer`, `RendererItem`, `RenderersApiServlet`, `UmsConfiguration`, `messages*.properties` |
 | `custom-settings` | Вкладка "Custom Settings" в Server Settings для настроек своих патчей | `CustomSettings.tsx` (новый), `ServerSettings.tsx`, `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
@@ -313,6 +314,34 @@ Settings -> "Disable all transcoding" (патчам транскодирован
 
 Штатные: `resume_back` (когда UMS сам отмечает "просмотрен"), `minimum_watched_play_time`,
 `disable_transcoding = true` (рекомендуется).
+
+---
+
+## folder-reset
+
+### Суть работы
+
+- Каждая общая папка, в которой есть файлы, заканчивается элементом "Reset watched" ("Сбросить просмотренное")
+  (`FolderResetAction`). После сортировки он возвращается в конец (`StoreContainer.sortChildrenIfNeeded`). В папках
+  A-Z (`atz_limit`) не добавляется.
+- Запуск элемента: всем файлам этой папки (без подпапок), у которых есть метка, в базе ставится точка остановки 0
+  и снимается "просмотрен" (`MediaStatusStore.clearPlayback`: счетчик воспроизведений не растет; в папках без
+  "monitored" статус не хранится и не меняется), папка обновляется у клиентов. Пользователь - учетная запись
+  устройства.
+- Элемент - штатный пункт-действие (`VirtualVideoActionLocalized`), работает точно как встроенные пункты UMS
+  ("Перезапустить сервер" в папке настроек сервера): действие при запросе ролика, штатный ролик
+  `videos/action_success-512.mpg`, штатная миниатюра `images/store/action-ok.png`. Своих роликов и обработки нет.
+
+### Настройки в UI
+
+Custom Settings -> Root folders: "Show the "Reset watched" item at the end of folders"
+("Показывать элемент «Сбросить просмотренное» в конце папок"), с подсказкой.
+
+### Настройки в conf (`UMS.conf`)
+
+| Ключ | По умолчанию | Значение |
+|---|---|---|
+| `show_folder_reset_item` | `true` | элемент "Reset watched" в конце папок с файлами (в `NEED_RENDERERS_MEDIA_STORE_RELOAD_FLAGS`) |
 
 ---
 
