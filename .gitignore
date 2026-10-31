@@ -55,3 +55,9 @@ ums-testserver.jar
 /osx
 
 *.code-workspace
+
+# <custom:build-scripts> Outputs of build\build.ps1 (the scripts themselves are tracked)
+/build/bin/
+/build/setup/
+/build/release/
+# </custom:build-scripts>
