@@ -20,6 +20,9 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 import { useEffect, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 
+// <custom:readme-custom> "Custom edition" tab
+import CustomEdition from './CustomEdition'
+// </custom:readme-custom>
 import MemoryBar from '../MemoryBar/MemoryBar'
 import { AboutData } from '../../services/about-service'
 import { I18nInterface } from '../../services/i18n-service'
@@ -108,6 +111,9 @@ const About = ({ i18n, session }: { i18n: I18nInterface, session: SessionInterfa
           <Tabs.Tab value="application">{i18n.get('Application')}</Tabs.Tab>
           <Tabs.Tab value="translations">{i18n.get('Translations')}</Tabs.Tab>
           <Tabs.Tab value="relatedLinks">{i18n.get('RelatedLinks_title')}</Tabs.Tab>
+          {/* <custom:readme-custom> "Custom edition" tab: what the fork changes (README-Custom.md) */}
+          <Tabs.Tab value="customEdition">{i18n.get('CustomEdition')}</Tabs.Tab>
+          {/* </custom:readme-custom> */}
         </Tabs.List>
         <Tabs.Panel value="application" pt="xs">
           <Table striped>
@@ -180,6 +186,11 @@ const About = ({ i18n, session }: { i18n: I18nInterface, session: SessionInterfa
             </Table.Tbody>
           </Table>
         </Tabs.Panel>
+        {/* <custom:readme-custom> "Custom edition" tab */}
+        <Tabs.Panel value="customEdition" pt="xs">
+          <CustomEdition i18n={i18n} />
+        </Tabs.Panel>
+        {/* </custom:readme-custom> */}
       </Tabs>
     </Box>
   )

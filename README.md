@@ -1,4 +1,9 @@
-# Universal Media Server
+<!-- <custom-remove:readme-custom> -->
+<!-- # Universal Media Server -->
+<!-- </custom-remove:readme-custom> -->
+<!-- <custom:readme-custom> The fork's name -->
+# Universal Media Server - Custom edition
+<!-- </custom:readme-custom> -->
 ![Universal Media Server CI](https://github.com/UniversalMediaServer/UniversalMediaServer/workflows/CI/badge.svg) [![Crowdin](https://badges.crowdin.net/universalmediaserver/localized.svg)](https://crowdin.com/project/universalmediaserver) [![Licence](https://img.shields.io/github/license/UniversalMediaServer/UniversalMediaServer.svg)](LICENSE.txt) [![Latest release](https://img.shields.io/github/v/release/UniversalMediaServer/UniversalMediaServer.svg)](https://github.com/UniversalMediaServer/UniversalMediaServer/releases/latest) [![Contributors](https://img.shields.io/github/contributors/UniversalMediaServer/UniversalMediaServer.svg)](https://github.com/UniversalMediaServer/UniversalMediaServer/graphs/contributors)
 
 [<img align="right" src="https://github.com/UniversalMediaServer/UniversalMediaServer/blob/main/src/main/resources/images/logo.png?raw=true" alt="Universal Media Server" width="256" height="auto"/>][1] 
@@ -10,6 +15,19 @@ Universal Media Server supports all major operating systems, with versions for W
 The program streams or transcodes many different media formats with little or no configuration.
 It is powered by [FFmpeg][27], [MediaInfo][28], [Crowdin][29], [MEncoder][26], tsMuxeR, AviSynth, VLC, and more, which combine to offer support for a wide range of media formats.
 
+<!-- <custom:readme-custom> Link to the list of the custom branch changes -->
+## Custom fork
+
+**Universal Media Server - Custom edition** is Universal Media Server for a home library kept in folders on the
+server's disks. The TV shows those folders exactly as they are on the disk, every title says whether it was already
+watched (`[*]`) or where it was stopped (`[1:02:15]`), and the folders are managed from the browser: mark files
+watched or unwatched, find files by name, delete watched files and folders. A "Control" folder on the TV reloads the
+media library, restarts the server or shuts down the computer right from the remote. Everything else works as in
+upstream UMS, which this edition follows with every release.
+
+All changes compared to upstream `main`, grouped for users: [README-Custom.md](README-Custom.md).
+
+<!-- </custom:readme-custom> -->
 ## Current Project Members
 
 * [ik666][32]
