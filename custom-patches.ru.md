@@ -23,7 +23,7 @@
 Тесты (JUnit 5, `src/test/java`, в тегах своего патча): `FullyPlayedLabelTest` (`playback-labels`),
 `MacAddressesTest`, `MediaTableFilesStatusClearPlaybackTest` (`common`), `FolderManagerApiServletTest` (`folders-root`),
 `PlaybackPositionTrackerTest` (`position-tracker`), `ControlFolderSettingsTest` (`reload-media`), `FolderResetActionTest`
-(`folder-reset`); `ruid-no-mmap` проверяет штатный `ResourceIdentifierTest`. Запуск: `mvn test -P testing-windows`
+(`folder-reset`), `IncompleteFilesTest` (`incomplete-files`); `ruid-no-mmap` проверяет штатный `ResourceIdentifierTest`. Запуск: `mvn test -P testing-windows`
 (с `setup\build-tools.ps1`). Новый патч - новые тесты к нему.
 
 Сводка:
@@ -42,6 +42,7 @@
 | `deep-browse` | Прямой запрос папки по id (закладка клиента) работает сразу после перезапуска, без захода в корень | `MediaStore` |
 | `server-uuid` | Кнопка "New server UUID" в Custom Settings: новый UUID сервера и перезапуск (для копии UMS на другом ПК) | `MediaServer`, `ActionsApiServlet`, `CustomSettings.tsx` (раздел в теге `custom-settings`), `messages*.properties` |
 | `ruid-no-mmap` | RUID файла считается обычным чтением, а не отображением в память: свежие файлы не остаются занятыми UMS до сборки мусора | `ResourceIdentifier` |
+| `incomplete-files` | Файлы, которые еще качаются (торренты), не читаются MediaInfo / FFmpeg: показываются с песочными часами и без данных о медиа, перепроверяются в фоне, читаются один раз после докачки | `IncompleteFiles` (новый), `MediaScanner`, `MediaInfoStore`, `RealFile`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `UmsConfiguration`, `CustomSettings.tsx` (раздел в теге `custom-settings`), `FolderManagerApiServlet`, `FolderFiles.tsx`, `folder-service.tsx` (строки в теге `folders-root`), `messages*.properties` |
 | `logo` | Свой логотип вместо логотипа UMS: в начале заголовка веб-интерфейса, иконки веб-интерфейса и вкладки браузера, значок сервера на ТВ (DLNA), окно и трей, `UMS.exe` и установщик, `README.md` | `UmsAppShell.tsx`; картинки `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | Релизы на GitHub форка: номер `<версия upstream>-custom.<N>` (например `15.9.0-custom.1`), установщик Windows x64 и portable zip; номер виден в веб-интерфейсе как версия | `project.properties`, `AboutApiServlet`; `build/release.ps1` (новый), `build/build.ps1 -CustomVersion`, `release-custom.bat` в корне рабочей папки |
 | `readme-custom` | `README-Custom.md` - что меняет форк, для пользователей (по группам изменений, английский и русский), ссылка в `README.md` ("Custom fork"); вкладка "Custom edition" на странице "О программе" показывает этот файл (Markdown -> HTML через showdown, раздел по языку интерфейса: русский или английский) | `README-Custom.md` (новый), `README.md`, `About.tsx`, `CustomEdition.tsx` (новый), `messages*.properties`; зависимость `showdown` и `@types/showdown` в `react-client/package.json` и `yarn.lock` (в JSON тегов нет) |
@@ -78,6 +79,13 @@
 
 ```
 <текущий UUID>  [New server UUID]           -> uuid (новый случайный) + перезапуск медиасервера
+```
+
+Раздел Files being downloaded (рус.: "Недокачанные файлы"), патч `incomplete-files`:
+
+```
+    Секунд без изменений до чтения файла (0 = выключено)       60   incomplete_files_check_seconds
+[x] Считать недокачанными и файлы с пустыми (нулевыми) блоками      incomplete_files_zero_check
 ```
 
 ---
@@ -146,7 +154,9 @@
   (`FolderStatusBar`): выделено, просмотрено, всего - число файлов и их общий размер, с иконками. Справа -
   действия, панель шириной 250 px.
 - Названия - с меткой по тем же настройкам, что у устройств (`FullyPlayed.addPlaybackLabel`: место, пороги,
-  включение меток); просмотренные (`[*]`) приглушены. Флажок в заголовке выделяет все / снимает выделение.
+  включение меток); просмотренные (`[*]`) приглушены, с иконкой глаза перед именем. У файла, который еще качается
+  (патч `incomplete-files`, поле `incomplete`), перед именем темно-желтая иконка песочных часов. Флажок в заголовке
+  выделяет все / снимает выделение.
 - "Прочитать медиаданные" (первая в панели действий): в фоне читает длительность, кодеки и размер видео файлов
   открытой папки в медиатеку - тот же разбор, что при просмотре файлов клиентом (`POST /v1/api/folders/read {path}`,
   ход - `GET .../read` -> `{running, done, total}`; одно задание за раз). На кнопке "Чтение медиаданных: n из N",
@@ -547,6 +557,51 @@ Custom Settings -> "Server UUID": кнопка "New server UUID" (не наст�
 ### Настройки в conf (`UMS.conf`)
 
 Своих ключей нет; меняется штатный `uuid`.
+
+---
+
+## incomplete-files
+
+### Что делает
+
+Торрент-клиенты (qBittorrent и другие) сразу создают файл полного размера и не блокируют его, поэтому штатная проверка
+перед разбором ("размер не меняется и файл не занят") проходит. MediaInfo читает гигабайты нулей при 100% загрузке ядра
+на каждый файл (несколько ядер сразу, пока качается сериал), после него не справляется FFmpeg, и файл скрывается как
+"could not be parsed". То же происходит, когда телевизор открывает папку.
+
+Патч (`IncompleteFiles`): файл **недокачан**, если
+
+- он менялся меньше `incomplete_files_check_seconds` секунд назад (время в будущем - сбитые часы камеры или NAS -
+  не считается), или
+- его сейчас нельзя прочитать, или он еще открыт на запись другим процессом (зависшее копирование), или
+- (`incomplete_files_zero_check`) один из 16 выборочных блоков по 64 КБ (начало, конец и равномерно между ними,
+  чтение ~1 МБ) состоит из одних нулей - еще не скачанная часть, например торрент в очереди или на паузе. Видеоконтейнеры
+  (`mkv`, `mp4`, `avi`, `ts`, `m2ts`, `mpg`, ...) проверяются по нулям всегда, остальные файлы (аудио, образы дисков) -
+  только если UMS с момента запуска видел, как они записываются: в готовом аудиофайле или образе нули тоже бывают
+  (тишина в WAV, пустое место в ISO). Маленькую недостающую часть между выборками проверка не видит; пока торрент качается, файл
+  ловит первое правило.
+
+Недокачанный файл не передается в MediaInfo / FFmpeg (`MediaScanner.parseFileEntry`, `MediaInfoStore.getMediaInfo`,
+запасной разбор FFmpeg в `RealFile.isValid`): он показывается в папке **без данных о медиа** и с **песочными часами**
+(U+23F3) перед названием (DLNA и веб-плеер); на странице "Управление папками" у файла перед именем темно-желтая
+иконка песочных часов (файлы, уже известные как недокачанные, или без данных о медиа и измененные меньше интервала
+назад; при показе списка файлы не читаются). Новый файл, найденный во время записи, сразу появляется в открытых папках
+(с часами), а не только после докачки. Файл запоминается и проверяется заново в фоне раз в интервал (поток
+"Incomplete files check", низший приоритет); неизменившийся файл, пойманный по нулевым блокам, не читается снова, пока
+не изменится. Когда файл готов, устройства заново разбирают его (`ConnectedRenderers.invalidateRendererCache`), и он
+проходит штатный путь нового файла (база, обновление папки на телевизорах): часы исчезают, появляются длительность и кодеки.
+
+### Настройки в UI
+
+Custom Settings -> "Files being downloaded" (рус.: "Недокачанные файлы"): поле секунд (0 = патч выключен, штатное
+поведение) и флажок проверки нулевых блоков.
+
+### Настройки в conf (`UMS.conf`)
+
+| Ключ | По умолчанию | Смысл |
+|---|---|---|
+| `incomplete_files_check_seconds` | `60` | Столько секунд файл должен не меняться, чтобы его прочитали; это же интервал фоновой проверки. `0` = выключено |
+| `incomplete_files_zero_check` | `true` | Файл с выборочным блоком из одних нулей считается недокачанным |
 
 ---
 

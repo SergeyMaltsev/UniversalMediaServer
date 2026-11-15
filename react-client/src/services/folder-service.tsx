@@ -35,7 +35,12 @@ export interface FolderFile {
   /** "1920x1080", "" for audio files or if unknown */
   resolution: string
   played: boolean
+  /** still being downloaded: not read by MediaInfo yet (patch incomplete-files) */
+  incomplete: boolean
 }
+
+/** Color of the hourglass of files still being downloaded (patch incomplete-files) */
+export const incompleteColor = 'yellow.8'
 
 /** nodeProps of a folder tree node: media files and played ones, subfolders included */
 export interface FolderCounts {

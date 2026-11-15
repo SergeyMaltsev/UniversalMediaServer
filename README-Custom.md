@@ -51,6 +51,8 @@ already watched, and you manage the folders from the browser - without renaming 
 - Changing a setting applies to all folders at once, without a server restart.
 - A folder bookmarked on the TV opens right after the server restarts.
 - New files are no longer kept locked by the server: they can be moved or deleted at once.
+- Files still being downloaded (torrents) no longer load the CPU: they are shown with an hourglass before the title
+  and read once the download is complete (the waiting time is set in the settings).
 
 ### For developers
 
@@ -65,12 +67,12 @@ Branch `custom` = upstream `main` + patches; every change in the code is marked 
 | 4. Server control | `reload-media` |
 | 5. Devices | `common` |
 | 6. Interface and settings | `custom-settings`, `common`, `server-uuid`, `logo`, `readme-custom` |
-| 7. Fixes | `settings-reload`, `deep-browse`, `ruid-no-mmap` |
+| 7. Fixes | `settings-reload`, `deep-browse`, `ruid-no-mmap`, `incomplete-files` |
 | Build and releases | `build-scripts` (`build/build.bat`, Windows x64 only), `release` (`build/release.ps1`: GitHub release `<upstream version>-custom.<N>`, installer + portable zip) |
 
 Tests: JUnit 5 in `src/test/java` (`mvn test -P testing-windows`) - `FullyPlayedLabelTest`, `MacAddressesTest`,
 `MediaTableFilesStatusClearPlaybackTest`, `FolderManagerApiServletTest`, `PlaybackPositionTrackerTest`,
-`ControlFolderSettingsTest`, `FolderResetActionTest`. Update from upstream: merge `upstream/main` into `custom`.
+`ControlFolderSettingsTest`, `FolderResetActionTest`, `IncompleteFilesTest`. Update from upstream: merge `upstream/main` into `custom`.
 
 ## Русский
 
@@ -123,6 +125,8 @@ Tests: JUnit 5 in `src/test/java` (`mvn test -P testing-windows`) - `FullyPlayed
 - Изменение настройки сразу действует во всех папках, без перезапуска сервера.
 - Папка из закладки на телевизоре открывается сразу после перезапуска сервера.
 - Новые файлы больше не остаются занятыми сервером: их сразу можно переместить или удалить.
+- Файлы, которые еще качаются (торренты), больше не грузят процессор: они видны с песочными часами перед названием
+  и читаются один раз после докачки (время ожидания задается в настройках).
 
 ### Для разработчиков
 
@@ -137,10 +141,10 @@ Tests: JUnit 5 in `src/test/java` (`mvn test -P testing-windows`) - `FullyPlayed
 | 4. Управление сервером | `reload-media` |
 | 5. Устройства | `common` |
 | 6. Интерфейс и настройки | `custom-settings`, `common`, `server-uuid`, `logo`, `readme-custom` |
-| 7. Исправления | `settings-reload`, `deep-browse`, `ruid-no-mmap` |
+| 7. Исправления | `settings-reload`, `deep-browse`, `ruid-no-mmap`, `incomplete-files` |
 | Сборка и релизы | `build-scripts` (`build/build.bat`, только Windows x64), `release` (`build/release.ps1`: релиз на GitHub `<версия upstream>-custom.<N>`, установщик + portable zip) |
 
 Тесты: JUnit 5 в `src/test/java` (`mvn test -P testing-windows`) - `FullyPlayedLabelTest`, `MacAddressesTest`,
 `MediaTableFilesStatusClearPlaybackTest`, `FolderManagerApiServletTest`, `PlaybackPositionTrackerTest`,
-`ControlFolderSettingsTest`, `FolderResetActionTest`. Обновление из upstream: слить `upstream/main` в `custom`.
+`ControlFolderSettingsTest`, `FolderResetActionTest`, `IncompleteFilesTest`. Обновление из upstream: слить `upstream/main` в `custom`.
 <!-- </custom:readme-custom> -->

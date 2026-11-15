@@ -54,7 +54,7 @@ export default function CustomSettings({
   }
 
   return (
-    <Accordion multiple defaultValue={['CustomRootFolders', 'CustomControlFolder', 'CustomServerUuid']}>
+    <Accordion multiple defaultValue={['CustomRootFolders', 'CustomControlFolder', 'CustomIncompleteFiles', 'CustomServerUuid']}>
       <Accordion.Item value="CustomRootFolders">
         <Accordion.Control>{i18n.get('CustomRootFolders')}</Accordion.Control>
         <Accordion.Panel>
@@ -182,6 +182,30 @@ export default function CustomSettings({
                 disabled={!canModify || !form.values['show_control_folder']}
                 label={i18n.get('ShowShutdownItem')}
                 {...form.getInputProps('show_shutdown_item', { type: 'checkbox' })}
+              />
+            </Tooltip>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+      {/* Files being downloaded (patch incomplete-files) */}
+      <Accordion.Item value="CustomIncompleteFiles">
+        <Accordion.Control>{i18n.get('CustomIncompleteFiles')}</Accordion.Control>
+        <Accordion.Panel>
+          <Stack>
+            <Tooltip label={allowHtml(i18n.get('IncompleteFilesCheckSecondsTooltip'))} {...defaultTooltipSettings}>
+              <NumberInput
+                label={i18n.get('IncompleteFilesCheckSeconds')}
+                min={0}
+                max={3600}
+                disabled={!canModify}
+                {...form.getInputProps('incomplete_files_check_seconds')}
+              />
+            </Tooltip>
+            <Tooltip label={allowHtml(i18n.get('IncompleteFilesZeroCheckTooltip'))} {...defaultTooltipSettings}>
+              <Checkbox
+                disabled={!canModify || !form.values['incomplete_files_check_seconds']}
+                label={i18n.get('IncompleteFilesZeroCheck')}
+                {...form.getInputProps('incomplete_files_zero_check', { type: 'checkbox' })}
               />
             </Tooltip>
           </Stack>

@@ -442,6 +442,10 @@ public class UmsConfiguration extends BaseConfiguration {
 	// <custom:folder-reset> Key for the "Reset watched" item at the end of a folder
 	private static final String KEY_SHOW_FOLDER_RESET_ITEM = "show_folder_reset_item";
 	// </custom:folder-reset>
+	// <custom:incomplete-files> Keys for deferring the parsing of files being downloaded
+	private static final String KEY_INCOMPLETE_FILES_CHECK_SECONDS = "incomplete_files_check_seconds";
+	private static final String KEY_INCOMPLETE_FILES_ZERO_CHECK = "incomplete_files_zero_check";
+	// </custom:incomplete-files>
 	// <custom:reload-media> Key for the "Reload media library" item in the root
 	private static final String KEY_SHOW_CONTROL_FOLDER = "show_control_folder";
 	private static final String KEY_SHOW_HIBERNATE_ITEM = "show_hibernate_item";
@@ -4740,6 +4744,25 @@ public class UmsConfiguration extends BaseConfiguration {
 	}
 	// </custom:folder-reset>
 
+	// <custom:incomplete-files> Getters for deferring the parsing of files being downloaded
+	/**
+	 * @return the seconds a file must stay unchanged before it is parsed, also
+	 * the interval of the background check of unfinished files; 0 = off
+	 * (default 60)
+	 */
+	public int getIncompleteFilesCheckSeconds() {
+		return Math.max(0, getInt(KEY_INCOMPLETE_FILES_CHECK_SECONDS, 60));
+	}
+
+	/**
+	 * @return whether a file with an all-zero sampled block counts as not
+	 * downloaded yet (default true)
+	 */
+	public boolean isIncompleteFilesZeroCheck() {
+		return getBoolean(KEY_INCOMPLETE_FILES_ZERO_CHECK, true);
+	}
+	// </custom:incomplete-files>
+
 	// <custom:reload-media> Getters for the "Control" folder in the root and its items
 	/**
 	 * @return whether the root ends with the "Control" folder
@@ -6248,6 +6271,10 @@ public class UmsConfiguration extends BaseConfiguration {
 		// <custom:folder-reset> Web UI default for the "Reset watched" item
 		jObj.addProperty(KEY_SHOW_FOLDER_RESET_ITEM, true);
 		// </custom:folder-reset>
+		// <custom:incomplete-files> Web UI defaults for files being downloaded
+		jObj.addProperty(KEY_INCOMPLETE_FILES_CHECK_SECONDS, 60);
+		jObj.addProperty(KEY_INCOMPLETE_FILES_ZERO_CHECK, true);
+		// </custom:incomplete-files>
 		// <custom:reload-media> Web UI defaults for the "Control" folder
 		jObj.addProperty(KEY_SHOW_CONTROL_FOLDER, true);
 		jObj.addProperty(KEY_SHOW_HIBERNATE_ITEM, true);

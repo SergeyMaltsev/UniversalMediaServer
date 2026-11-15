@@ -68,6 +68,7 @@ import net.pms.media.MediaStatus;
 import net.pms.network.webguiserver.GuiHttpServlet;
 import net.pms.renderers.ConnectedRenderers;
 import net.pms.renderers.Renderer;
+import net.pms.store.IncompleteFiles;
 import net.pms.store.MediaInfoStore;
 import net.pms.store.MediaStatusStore;
 import net.pms.store.MediaStoreIds;
@@ -718,6 +719,8 @@ public class FolderManagerApiServlet extends GuiHttpServlet {
 				item.addProperty("codec", getCodec(mediaInfo));
 				item.addProperty("resolution", getResolution(mediaInfo));
 				item.addProperty("played", FullyPlayed.isPlayed(status.isFullyPlayed(), position, duration, configuration));
+				// Still being downloaded (patch incomplete-files): known as unfinished, or without media data and changed just now; no file reads
+				item.addProperty("incomplete", IncompleteFiles.isPending(file) || (duration <= 0 && IncompleteFiles.isRecentlyModified(file)));
 				result.add(item);
 			}
 		} finally {

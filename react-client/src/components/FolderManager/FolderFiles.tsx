@@ -16,11 +16,11 @@
  */
 // <custom:folders-root> Whole file: files of the folder (center panel) of the "Folder management" page
 import { Box, Checkbox, Group, Table, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAspectRatio, IconChevronDown, IconChevronUp, IconClock, IconDatabase, IconEye, IconMovie, IconSelector } from '@tabler/icons-react'
+import { IconAspectRatio, IconChevronDown, IconChevronUp, IconClock, IconDatabase, IconEye, IconHourglassHigh, IconMovie, IconSelector } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 
 import { I18nInterface } from '../../services/i18n-service'
-import { accentColor, FolderFile, formatDuration, formatSize } from '../../services/folder-service'
+import { accentColor, FolderFile, formatDuration, formatSize, incompleteColor } from '../../services/folder-service'
 
 /** A table column as narrow as its widest cell (1% shrinks it, nowrap keeps the content on one line) */
 const fitContent = { width: '1%', whiteSpace: 'nowrap' } as const
@@ -139,6 +139,14 @@ export default function FolderFiles({
             </Table.Td>
             <Table.Td>
               <Group gap={6} wrap="nowrap">
+                {/* Still being downloaded (patch incomplete-files) */}
+                {file.incomplete && (
+                  <Tooltip label={i18n.get('CustomIncompleteFiles')}>
+                    <Box c={incompleteColor} display="flex" style={{ flexShrink: 0 }}>
+                      <IconHourglassHigh size={16} />
+                    </Box>
+                  </Tooltip>
+                )}
                 {file.played && (
                   <Box c={accentColor} display="flex" style={{ flexShrink: 0 }}>
                     <IconEye size={16} />

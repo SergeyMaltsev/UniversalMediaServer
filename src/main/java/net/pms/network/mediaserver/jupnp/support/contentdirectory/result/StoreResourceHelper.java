@@ -60,6 +60,9 @@ import net.pms.network.mediaserver.jupnp.support.contentdirectory.result.namespa
 import net.pms.network.mediaserver.jupnp.support.contentdirectory.result.namespace.upnp.UPNP;
 import net.pms.network.mediaserver.jupnp.support.contentdirectory.result.namespace.upnp.UPNP.AlbumArtURI;
 import net.pms.renderers.Renderer;
+// <custom:incomplete-files> Hourglass label of files being downloaded
+import net.pms.store.IncompleteFiles;
+// </custom:incomplete-files>
 import net.pms.store.MediaStoreIds;
 import net.pms.store.StoreContainer;
 import net.pms.store.StoreItem;
@@ -305,6 +308,9 @@ public class StoreResourceHelper {
 			title = FullyPlayed.addPlaybackLabel(title, item);
 		}
 		// </custom:playback-labels>
+		// <custom:incomplete-files> Hourglass before the title of a file being downloaded
+		title = IncompleteFiles.addLabel(title, item);
+		// </custom:incomplete-files>
 
 		title = item.resumeStr(title);
 		// <custom-remove:playback-labels>

@@ -137,6 +137,9 @@ public class MediaInfoStore {
 									!Parser.hasMediaContent(mediaInfo, type)
 								) &&
 								!Parser.MANUAL_PARSER.equals(mediaInfo.getMediaParser()) &&
+								// <custom:incomplete-files> No parsing while the file is being downloaded
+								!IncompleteFiles.isIncomplete(file) &&
+								// </custom:incomplete-files>
 								PARSE_RETRY.acquire(file)
 							) {
 								mediaInfo.setMediaParser(null);
@@ -161,6 +164,16 @@ public class MediaInfoStore {
 					}
 				}
 
+				// <custom:incomplete-files> A file being downloaded gets empty media info (not stored), parsed when complete
+				if (mediaInfo == null && IncompleteFiles.isIncomplete(file)) {
+					mediaInfo = new MediaInfo();
+					mediaInfo.setResourceId(ResourceIdentifier.getResourceIdentifier(filename));
+					return mediaInfo;
+				}
+				if (connection == null && mediaInfo != null && IncompleteFiles.isIncomplete(file)) {
+					return mediaInfo;
+				}
+				// </custom:incomplete-files>
 				if (mediaInfo == null) {
 					PARSE_RETRY.acquire(file);
 					mediaInfo = updateMediaInfoFromFile(filename, file, format, type, connection, input);

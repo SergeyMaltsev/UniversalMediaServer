@@ -512,6 +512,20 @@ public class MediaScanner implements SharedContentListener {
 						return;
 					}
 
+					// <custom:incomplete-files> A file still being downloaded is parsed later, when it is complete
+					if (IncompleteFiles.isIncomplete(file)) {
+						LOGGER.trace("File {} is not complete yet, parsing is deferred", filename);
+						if (advise || isCrawlingParentDirectory) {
+							// Shown at once (hourglass, no media data): the folders refresh without parsing it
+							for (Renderer connectedRenderer : ConnectedRenderers.getConnectedRenderers()) {
+								connectedRenderer.getMediaStore().fileAdded(file);
+							}
+							MediaStoreIds.incrementSystemUpdateId();
+						}
+						return;
+					}
+					// </custom:incomplete-files>
+
 					StoreResource rf = RENDERER.getMediaStore().createResourceFromFile(file);
 					if (rf != null) {
 						if (rf instanceof StoreItem storeItem) {
@@ -555,6 +569,18 @@ public class MediaScanner implements SharedContentListener {
 		};
 		FILE_EVENT_EXECUTOR.execute(r);
 	}
+
+	// <custom:incomplete-files> Called when a deferred file is complete
+	/**
+	 * Re-reads a file that was skipped while it was being written: the
+	 * renderers resolve it again (now with MediaInfo), then it goes through
+	 * the standard new file path (database, renderers advised).
+	 */
+	static void incompleteFileReady(File file) {
+		ConnectedRenderers.invalidateRendererCache(file);
+		parseFileEntry(file, false, true);
+	}
+	// </custom:incomplete-files>
 
 	private static void addFolderEntry(File directory) {
 		LOGGER.trace("Folder {} was created on the hard drive", directory);

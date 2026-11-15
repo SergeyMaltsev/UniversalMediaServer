@@ -1197,6 +1197,11 @@ public abstract class StoreItem extends StoreResource {
 	}
 
 	public String getLocalizedResumeName(String lang) {
+		// <custom:incomplete-files> Web Player: hourglass before the title of a file being downloaded
+		if (this instanceof RealFile realFile && !isInsideTranscodeFolder() && IncompleteFiles.isPending(realFile.getFile())) {
+			return resumeStr(IncompleteFiles.addLabel(FullyPlayed.addPlaybackLabel(getDisplayName(false), this), this));
+		}
+		// </custom:incomplete-files>
 		// <custom:playback-labels> Web Player titles like the DLNA ones: no suffix for plain files, "[*]" / "[h:mm:ss]" label
 		if (this instanceof RealFile && !isInsideTranscodeFolder()) {
 			return resumeStr(FullyPlayed.addPlaybackLabel(getDisplayName(false), this));

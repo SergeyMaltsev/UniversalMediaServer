@@ -24,7 +24,7 @@ Update this file and the short `README-Custom.md` with every change.
 Tests (JUnit 5, `src/test/java`, under the tags of their patch): `FullyPlayedLabelTest` (`playback-labels`),
 `MacAddressesTest`, `MediaTableFilesStatusClearPlaybackTest` (`common`), `FolderManagerApiServletTest` (`folders-root`),
 `PlaybackPositionTrackerTest` (`position-tracker`), `ControlFolderSettingsTest` (`reload-media`), `FolderResetActionTest`
-(`folder-reset`); `ruid-no-mmap` is checked by the standard `ResourceIdentifierTest`. Run: `mvn test -P testing-windows`
+(`folder-reset`), `IncompleteFilesTest` (`incomplete-files`); `ruid-no-mmap` is checked by the standard `ResourceIdentifierTest`. Run: `mvn test -P testing-windows`
 (with `setup\build-tools.ps1`). A new patch gets new tests.
 
 Summary:
@@ -43,6 +43,7 @@ Summary:
 | `deep-browse` | A direct request for a folder by id (client bookmark) works right after a restart, without opening the root first | `MediaStore` |
 | `server-uuid` | "New server UUID" button in Custom Settings: new server UUID and restart (for a copy of UMS on another PC) | `MediaServer`, `ActionsApiServlet`, `CustomSettings.tsx` (section in the `custom-settings` tag), `messages*.properties` |
 | `ruid-no-mmap` | The RUID of a file is computed with a normal read, not a memory mapping: new files do not stay locked by UMS until garbage collection | `ResourceIdentifier` |
+| `incomplete-files` | Files still being downloaded (torrents) are not read by MediaInfo / FFmpeg: shown with an hourglass and without media data, checked again in the background, read once when complete | `IncompleteFiles` (new), `MediaScanner`, `MediaInfoStore`, `RealFile`, `DidlHelper`, `StoreResourceHelper`, `StoreItem`, `UmsConfiguration`, `CustomSettings.tsx` (section in the `custom-settings` tag), `FolderManagerApiServlet`, `FolderFiles.tsx`, `folder-service.tsx` (lines in the `folders-root` tag), `messages*.properties` |
 | `logo` | Own logo instead of the UMS logo: at the start of the web UI header, web UI icon and browser tab, server icon on TV (DLNA), desktop window and tray, `UMS.exe` and installer, `README.md` | `UmsAppShell.tsx`; images `react-client/public/*`, `images/icon-*`, `icon-square-*`, `logo.*`, `external-resources/icon.ico`; `README.md` |
 | `release` | GitHub releases of the fork: number `<upstream version>-custom.<N>` (for example `15.9.0-custom.1`), Windows x64 installer and portable zip; the number is shown in the web UI as the version | `project.properties`, `AboutApiServlet`; `build/release.ps1` (new), `build/build.ps1 -CustomVersion`, `release-custom.bat` in the root of the working folder |
 | `readme-custom` | `README-Custom.md` - what the fork changes, for users (grouped by kind of change, English and Russian), link in `README.md` ("Custom fork"); the "Custom edition" tab on the "About" page shows this file (Markdown -> HTML via showdown, section chosen by the UI language: Russian or English) | `README-Custom.md` (new), `README.md`, `About.tsx`, `CustomEdition.tsx` (new), `messages*.properties`; dependency `showdown` and `@types/showdown` in `react-client/package.json` and `yarn.lock` (JSON has no tags) |
@@ -78,6 +79,13 @@ Server UUID section (patch `server-uuid`):
 
 ```
 <current UUID>  [New server UUID]           -> uuid (new random) + restart of the media server
+```
+
+Files being downloaded section (patch `incomplete-files`):
+
+```
+    Seconds without changes before a file is read (0 = off)   60   incomplete_files_check_seconds
+[x] Also treat files with empty (zero) blocks as not downloaded    incomplete_files_zero_check
 ```
 
 ---
@@ -142,7 +150,8 @@ settings; changes require the right to change settings. Three panels:
   (`FolderStatusBar`): selected, played, total - the number of files and their total size, with icons. On the right -
   actions, a panel 250 px wide.
 - Names - with a label by the same settings as for devices (`FullyPlayed.addPlaybackLabel`: position, thresholds,
-  label switches); played files (`[*]`) are dimmed. The checkbox in the header selects all / clears the selection.
+  label switches); played files (`[*]`) are dimmed, with an eye icon before the name. A file still being downloaded
+  (patch `incomplete-files`, field `incomplete`) has a dark yellow hourglass icon before the name. The checkbox in the header selects all / clears the selection.
 - "Read media info" (first in the actions panel): reads duration, codecs and video size of the open folder's files into
   the media library in the background, the same parsing as when a client browses them (`POST /v1/api/folders/read
   {path}`, progress `GET .../read` -> `{running, done, total}`; one job at a time). The button shows "Reading media
@@ -524,6 +533,52 @@ Custom Settings -> "Server UUID": the "New server UUID" button (not a setting, a
 ### Settings in conf (`UMS.conf`)
 
 No keys of its own; the standard `uuid` is changed.
+
+---
+
+## incomplete-files
+
+### What it does
+
+Torrent clients (qBittorrent and others) create the file at its full size at once and do not lock it, so the standard
+check before parsing ("the size does not change and the file is not locked") passes. MediaInfo then reads gigabytes of
+zeros at 100% CPU per file (several cores at once while a series is downloading), FFmpeg fails after it and the file is
+hidden as "could not be parsed". The same happens when a TV opens the folder.
+
+The patch (`IncompleteFiles`): a file is **unfinished** when
+
+- it was changed less than `incomplete_files_check_seconds` ago (a time in the future - wrong clock of a camera or a
+  NAS - does not count), or
+- it cannot be read now, or it is still open for writing by another process (a stalled copy), or
+- (`incomplete_files_zero_check`) one of 16 sampled 64 KB blocks (start, end and evenly in between, ~1 MB read)
+  consists of zeros only - a part that is not downloaded yet, for example a queued or paused torrent. The zero check
+  is done for video containers (`mkv`, `mp4`, `avi`, `ts`, `m2ts`, `mpg`, ...) always, for other files (audio, disc
+  images) only after UMS saw them being written since its start: a finished audio file or disc image can contain
+  zeros too (silence in a WAV file, free space in an ISO). A small missing part between the samples is not seen; while a torrent is downloading the first rule
+  catches it anyway.
+
+An unfinished file is not given to MediaInfo / FFmpeg (`MediaScanner.parseFileEntry`, `MediaInfoStore.getMediaInfo`,
+the FFmpeg fallback in `RealFile.isValid`): it is shown in its folder **without media data** and with an **hourglass**
+(U+23F3) before the title (DLNA and the web player); on the "Folder management" page the file has a dark yellow
+hourglass icon before its name (files known as unfinished, or without media data and changed less than the interval
+ago; the listing reads no files). A new file found while it is being written appears in the open folders at once (with
+the hourglass), not only after the download. It is remembered and checked again in the background once per
+interval (thread "Incomplete files check", lowest priority); an unchanged file found by its zero blocks is not read
+again until it changes. When a file is ready, the renderers resolve it again (`ConnectedRenderers.invalidateRendererCache`)
+and it goes through the standard path of a new file (database, refresh of the folder on the TVs) - the hourglass
+disappears and duration / codecs appear.
+
+### Settings in the UI
+
+Custom Settings -> "Files being downloaded": the seconds field (0 = the patch is off, standard behaviour) and the
+zero blocks checkbox.
+
+### Settings in conf (`UMS.conf`)
+
+| Key | Default | Meaning |
+|---|---|---|
+| `incomplete_files_check_seconds` | `60` | A file must stay unchanged this long before it is read; also the interval of the background check. `0` = off |
+| `incomplete_files_zero_check` | `true` | A file with an all-zero sampled block counts as not downloaded |
 
 ---
 

@@ -38,6 +38,9 @@ import net.pms.network.mediaserver.jupnp.support.contentdirectory.UmsContentDire
 import net.pms.parsers.FFmpegParser;
 import net.pms.platform.PlatformUtils;
 import net.pms.renderers.Renderer;
+// <custom:incomplete-files> Files being downloaded
+import net.pms.store.IncompleteFiles;
+// </custom:incomplete-files>
 import net.pms.store.MediaInfoStore;
 import net.pms.store.MediaStatusStore;
 import net.pms.store.StoreItem;
@@ -127,6 +130,12 @@ public class RealFile extends StoreItem implements SystemFileResource {
 		if (valid && getParent() != null && getParent().getDefaultRenderer() != null && getParent().getDefaultRenderer().isUseMediaInfo()) {
 			// we need to resolve the store resource now
 			run();
+
+			// <custom:incomplete-files> A file being downloaded is shown without media data, no FFmpeg fallback / thumbnail
+			if (IncompleteFiles.isPending(file)) {
+				return true;
+			}
+			// </custom:incomplete-files>
 
 			// Given that here getFormat() has already matched some (possibly plugin-defined) format:
 			//    Format.UNKNOWN + bad parse = inconclusive

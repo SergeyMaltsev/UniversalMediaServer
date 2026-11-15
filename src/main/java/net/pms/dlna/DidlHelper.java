@@ -37,6 +37,9 @@ import net.pms.media.video.metadata.MediaVideoMetadata;
 import net.pms.network.mediaserver.HTTPXMLHelper;
 import net.pms.network.mediaserver.MediaServer;
 import net.pms.renderers.Renderer;
+// <custom:incomplete-files> Hourglass label of files being downloaded
+import net.pms.store.IncompleteFiles;
+// </custom:incomplete-files>
 import net.pms.store.MediaStoreIds;
 import net.pms.store.StoreContainer;
 import net.pms.store.StoreItem;
@@ -208,6 +211,9 @@ public class DidlHelper extends DlnaHelper {
 			title = FullyPlayed.addPlaybackLabel(title, resource);
 		}
 		// </custom:playback-labels>
+		// <custom:incomplete-files> Hourglass before the title of a file being downloaded
+		title = IncompleteFiles.addLabel(title, resource);
+		// </custom:incomplete-files>
 
 		if (item != null) {
 			title = item.resumeStr(title);
