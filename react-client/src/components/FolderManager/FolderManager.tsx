@@ -15,9 +15,9 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 // <custom:folders-root> Whole file: "Folder management" page - folder tree, files, actions
-import { Box, Checkbox, CloseButton, Divider, getTreeExpandedState, Group, LoadingOverlay, Paper, ScrollArea, Stack, Text, TextInput, Tooltip, TreeNodeData, useTree } from '@mantine/core'
+import { Box, Button, Checkbox, CloseButton, Divider, getTreeExpandedState, Group, LoadingOverlay, Paper, ScrollArea, Stack, Text, TextInput, Tooltip, TreeNodeData, useTree } from '@mantine/core'
 import { useDebouncedValue, useLocalStorage, useMediaQuery } from '@mantine/hooks'
-import { IconFilter } from '@tabler/icons-react'
+import { IconChevronsDown, IconChevronsUp, IconFilter } from '@tabler/icons-react'
 import axios from 'axios'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -332,7 +332,7 @@ export default function FolderManager({ i18n, session }: { i18n: I18nInterface, 
   const treePanel = (
     <Paper withBorder p="xs" h="100%">
       <FolderTreeHeader i18n={i18n} shown={shownColumns} />
-      <ScrollArea h={`calc(${panelHeight} - 145px)`}>
+      <ScrollArea h={`calc(${panelHeight} - 175px)`}>
         <FolderTree
           i18n={i18n}
           tree={treeController}
@@ -342,6 +342,14 @@ export default function FolderManager({ i18n, session }: { i18n: I18nInterface, 
           onSelect={selectFolder}
         />
       </ScrollArea>
+      <Group gap="xs" pt={6} px="xs">
+        <Button size="compact-xs" variant="subtle" leftSection={<IconChevronsDown size={14} />} onClick={() => treeController.expandAllNodes()}>
+          {i18n.get('FolderTreeExpandAll')}
+        </Button>
+        <Button size="compact-xs" variant="subtle" leftSection={<IconChevronsUp size={14} />} onClick={() => treeController.collapseAllNodes()}>
+          {i18n.get('FolderTreeCollapseAll')}
+        </Button>
+      </Group>
       <Divider my="xs" />
       <Stack gap={6} px="xs" pb={4}>
         <Checkbox size="xs" label={i18n.get('ShowFolderPlayedCount')} checked={showPlayed} onChange={event => setShowPlayed(event.currentTarget.checked)} />

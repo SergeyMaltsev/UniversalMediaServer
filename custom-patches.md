@@ -127,7 +127,8 @@ settings; changes require the right to change settings. Three panels:
 - On the left - a tree of subfolders of the active Shared Content folders (hidden, `.` folders and `ignored_folder_names` are not
   shown). To the right of the folder name - columns (all with subfolders, `nodeProps` of the tree): played (in the color
   of the selected folder; 0 - empty), number of audio/video files, their size. Above the tree there is a header of the columns - icons only
-  (eye, film, disk) with tooltips. Under the tree there are checkboxes "Show played", "Show counts", "Show size". After actions the tree is refreshed.
+  (eye, film, disk) with tooltips. Right under the tree - the "Expand all" / "Collapse all" buttons (all branches of the tree);
+  below them the checkboxes "Show played", "Show counts", "Show size". After actions the tree is refreshed.
 - Between the tree and the list there is a splitter (`PanelSplitter`): tree width 200..700 px; a second splitter - between
   the list and the button panel, panel width 120..400 px. Button labels wrap by words, longer than 4 lines
   are cut with "..."; the full text is in a tooltip. On a narrow
